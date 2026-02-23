@@ -1,166 +1,151 @@
-📚 Babel — Sistema de Gestão Escolar
+# 📚 Babel — Sistema de Gestão Escolar
 
-Sistema de gestão escolar desenvolvido com Laravel 11 (backend), React + Vite (frontend) e MySQL 8 (banco de dados).
+Sistema de gestão escolar desenvolvido com **Laravel 11 (backend)**, **React + Vite (frontend)** e **MySQL 8 (banco de dados)**.
 
-O projeto foi criado para simular um sistema real utilizado por escolas, com controle de usuários, turmas, notas, frequência e financeiro.
+O projeto simula um sistema real utilizado por escolas, com controle de usuários, turmas, notas, frequência e financeiro.
 
-🚀 Tecnologias Utilizadas
-Backend
+---
 
-PHP 8.2+
+# 🚀 Tecnologias Utilizadas
 
-Laravel 11
+## Backend
+- PHP 8.2+
+- Laravel 11
+- Laravel Sanctum (autenticação por token)
+- MySQL 8
 
-Laravel Sanctum (autenticação por token)
+## Frontend
+- React 18
+- Vite 5
+- React Router DOM
+- Axios
+- Recharts
 
-MySQL 8
+---
 
-Frontend
+# 📁 Estrutura do Projeto
 
-React 18
+    babel/
+    ├── backend/          # API Laravel
+    ├── frontend/         # Aplicação React
+    └── banco-de-dados/   # Scripts SQL
 
-Vite 5
+---
 
-React Router DOM
-
-Axios
-
-Recharts
-
-📁 Estrutura do Projeto
-babel/
-├── backend/          # API Laravel
-├── frontend/         # Aplicação React
-└── banco-de-dados/   # Scripts SQL
-🔐 Autenticação e Perfis
+# 🔐 Autenticação e Perfis
 
 O sistema possui autenticação com controle de acesso por perfil.
 
 Perfis disponíveis:
 
-Administrador
-
-Secretaria
-
-Coordenação
-
-Professor
-
-Responsável
-
-Aluno
+- Administrador
+- Secretaria
+- Coordenação
+- Professor
+- Responsável
+- Aluno
 
 Cada perfil possui permissões específicas dentro do sistema.
 
-📦 Funcionalidades
-👤 Gestão de Usuários
+---
 
-Login e logout
+# 📦 Funcionalidades
 
-Controle de acesso por perfil
+## 👤 Gestão de Usuários
+- Login e logout
+- Controle de acesso por perfil
+- Alteração de senha
 
-Alteração de senha
+## 🎓 Gestão de Alunos
+- Cadastro e edição
+- Associação com responsáveis
+- Histórico escolar
+- Visualização de boletim
 
-🎓 Gestão de Alunos
+## 🏫 Turmas
+- Criação e edição
+- Associação de alunos
+- Associação de professores
 
-Cadastro e edição
+## 📝 Notas
+- Lançamento por disciplina
+- Cálculo automático de média
+- Visualização por aluno
 
-Associação com responsáveis
+## 📅 Frequência
+- Registro de presença/falta
+- Relatório por período
 
-Histórico escolar
+## 💰 Financeiro
+- Controle de mensalidades
+- Registro de pagamentos
+- Listagem de inadimplentes
 
-Visualização de boletim
+## 📢 Comunicação
+- Envio de comunicados
+- Visualização por perfil
 
-🏫 Turmas
+## 📊 Dashboard
+- Painel personalizado para cada tipo de usuário
 
-Criação e edição
+---
 
-Associação de alunos
-
-Associação de professores
-
-📝 Notas
-
-Lançamento por disciplina
-
-Cálculo automático de média
-
-Visualização por aluno
-
-📅 Frequência
-
-Registro de presença/falta
-
-Relatório por período
-
-💰 Financeiro
-
-Controle de mensalidades
-
-Registro de pagamentos
-
-Listagem de inadimplentes
-
-📢 Comunicação
-
-Envio de comunicados
-
-Visualização por perfil
-
-📊 Dashboard
-
-Painel personalizado para cada tipo de usuário
-
-🧪 Testes
+# 🧪 Testes
 
 O backend possui testes automatizados para validar:
 
-Autenticação
-
-Permissões por perfil
-
-Operações principais (alunos, turmas, notas e financeiro)
+- Autenticação
+- Permissões por perfil
+- Operações principais (alunos, turmas, notas e financeiro)
 
 Para executar:
 
-cd backend
-php artisan test
-⚙️ Como Executar o Projeto
-1️⃣ Banco de Dados
-mysql -u root -p < banco-de-dados/001_schema.sql
-mysql -u root -p babel_escola < banco-de-dados/002_seeds.sql
-2️⃣ Backend
-cd backend
+    cd backend
+    php artisan test
 
-composer install
-cp .env.example .env
-php artisan key:generate
+---
 
-# Configurar acesso ao banco no .env
-php artisan serve
+# ⚙️ Como Executar o Projeto
+
+## 1️⃣ Banco de Dados
+
+    mysql -u root -p < banco-de-dados/001_schema.sql
+    mysql -u root -p babel_escola < banco-de-dados/002_seeds.sql
+
+---
+
+## 2️⃣ Backend
+
+    cd backend
+    composer install
+    cp .env.example .env
+    php artisan key:generate
+
+    # Configurar acesso ao banco no .env
+    php artisan serve
 
 API disponível em:
-
 http://localhost:8000/api
-3️⃣ Frontend
-cd frontend
 
-npm install
-npm run dev
+---
+
+## 3️⃣ Frontend
+
+    cd frontend
+    npm install
+    npm run dev
 
 Aplicação disponível em:
-
 http://localhost:5173
-🎯 Objetivo do Projeto
 
-Este projeto foi desenvolvido para demonstrar:
+---
 
-Desenvolvimento fullstack
+# 🎯 Objetivo do Projeto
 
-Integração entre API e frontend
+Este projeto demonstra:
 
-Organização de código
-
-Controle de acesso por perfil
-
-Estrutura de sistema real aplicado ao contexto escolar
+- Desenvolvimento fullstack
+- Integração entre API e frontend
+- Organização de código
+- Controle de acesso por perfil
+- Estrutura de sistema aplicado ao contexto escolar
