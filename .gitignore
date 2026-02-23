@@ -1,0 +1,62 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Node
+/node_modules/
+/frontend/node_modules/
+/frontend/dist/
+/public/build/
+npm-debug.log*
+yarn-error.log*
+
+# Composer
+/vendor/
+/composer.lock
+
+# Laravel environment and generated files
+.env
+.env.*
+/public/hot
+/public/storage
+/storage/*.key
+/bootstrap/cache/*.php
+
+# Laravel storage & logs
+/storage/debugbar/
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+
+# PHPUnit
+.phpunit.result.cache
+
+# Vite / build
+/node_modules/
+/frontend/.vite/
+
+# Misc
+*.log
+*.cache
+.DS_Store
+
+# Local OS files
+Thumbs.db
+
+# Ignore deployment artifacts
+.env.local
+.env.testing
+
+# Ignore composer vendor if present
+/vendor/
+
+# Ignore generated IDE helper files
+/_ide_helper.php
+/_ide_helper_models.php

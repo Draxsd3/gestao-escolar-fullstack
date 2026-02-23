@@ -1,0 +1,234 @@
+/* Exitus login theme (aplicado somente na página de Login do Babel) */
+
+.exitus-login-root{
+  min-height:100vh;
+  background:#3F3D56; /* $color-tertiary-night-mode */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 16px;
+  font-family:'DM Sans', sans-serif;
+}
+
+.exitus-login-container{
+  width:min(1100px, 100%);
+  border-radius:15px;
+  border-bottom-right-radius:50px;
+  border-top-right-radius:50px;
+  background-image:linear-gradient(to bottom, #ffffff 0, #ffffff 50%, #F2F2F2 50%);
+  box-shadow:0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+  overflow:hidden;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 900px){
+  .exitus-login-container{ grid-template-columns: 1fr; border-top-right-radius:15px; border-bottom-right-radius:15px; }
+}
+
+.exitus-sidebar-primary{
+  background:#ffffff;
+  border-top-left-radius:15px;
+  border-bottom-left-radius:15px;
+  border-bottom-right-radius:50px;
+  padding:28px 26px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:18px;
+}
+
+@media (max-width: 900px){
+  .exitus-sidebar-primary{
+    border-bottom-right-radius:15px;
+    border-bottom-left-radius:15px;
+  }
+}
+
+.exitus-logo{
+  width: min(260px, 70%);
+  height:auto;
+  margin-top:6px;
+}
+
+.exitus-illu{
+  width:min(360px, 85%);
+  height:auto;
+  margin-top:8px;
+}
+
+.exitus-portais{
+  width:100%;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:14px;
+  margin-top:10px;
+}
+
+@media (max-width: 900px){
+  .exitus-portais{ grid-template-columns: 1fr; }
+}
+
+.exitus-portal-btn{
+  cursor:pointer;
+  border-radius:5px;
+  border:1px solid #00D8C3;
+  background:#F2F2F2;
+  color:#111;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-weight:800;
+  letter-spacing:.7px;
+  font-size:12px;
+  transition:all .15s ease;
+  user-select:none;
+}
+
+.exitus-portal-btn svg{ width:16px; height:16px; }
+.exitus-portal-btn:hover{ filter:brightness(.98); transform:translateY(-1px); }
+
+.exitus-portal-active{
+  background:#00D8C3;
+  color:#fff;
+}
+
+.exitus-sidebar-secondary{
+  background:#F2F2F2;
+  border-bottom-right-radius:15px;
+  border-top-left-radius:50px;
+  border-top-right-radius:15px;
+  padding:28px 26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+@media (max-width: 900px){
+  .exitus-sidebar-secondary{
+    border-top-left-radius:15px;
+  }
+}
+
+.exitus-form{
+  width:min(420px, 100%);
+  background:#ffffff;
+  border:1px solid #00D8C3;
+  border-radius:15px;
+  padding:16px 18px 18px;
+}
+
+.exitus-form-title{
+  color:#506177; /* $color-dark-gray */
+  font-size:20px;
+  font-weight:800;
+  margin:8px 0 14px;
+  padding-left:4px;
+}
+
+.exitus-field{
+  margin:12px 0;
+}
+
+.exitus-label{
+  font-size:15px;
+  font-weight:700;
+  display:block;
+  margin-bottom:6px;
+  color:#111;
+}
+
+.exitus-input-row{
+  display:flex;
+  align-items:center;
+  background:#ffffff;
+}
+
+.exitus-addon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px 10px 10px 12px;
+  border:none;
+  border-bottom:2px solid #363C90; /* $color-blue */
+  color:#3F3D56;
+}
+
+.exitus-addon svg{ width:16px; height:16px; }
+
+.exitus-input{
+  flex:1;
+  border:none;
+  outline:none;
+  padding:10px 12px;
+  border-bottom:2px solid #e4d9ff; /* $color-extra-light-blue */
+  font-size:14px;
+  transition:all .25s ease;
+}
+
+.exitus-input:hover{
+  border-bottom:2px solid #363C90;
+}
+
+.exitus-input:focus{
+  border-bottom:2px solid #536DFE;
+}
+
+.exitus-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:16px;
+}
+
+.exitus-btn{
+  width:100%;
+  background:#00D8C3;
+  border:none;
+  border-radius:10px;
+  padding:12px 14px;
+  color:#fff;
+  font-weight:900;
+  letter-spacing:.6px;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+
+.exitus-btn:hover{ background:#5B5583; }
+
+.exitus-link{
+  background:none;
+  border:none;
+  color:#3F3D56;
+  cursor:pointer;
+  font-weight:700;
+  font-size:12.5px;
+  padding:6px 2px;
+  text-decoration:underline;
+}
+
+.exitus-error{
+  margin-top:10px;
+  background: rgba(220,53,69,.10);
+  border: 1px solid rgba(220,53,69,.25);
+  color:#DC3545;
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:13px;
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+}
+.exitus-error svg{ width:16px; height:16px; margin-top:2px; }
+
+.exitus-footer{
+  margin-top:18px;
+  text-align:center;
+  font-size:12.5px;
+  font-weight:600;
+  color: rgba(255,255,255,.35);
+}
