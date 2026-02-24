@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { AnoLetivoProvider } from './context/AnoLetivoContext'
 import LoginPage from './pages/auth/LoginPage'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/dashboard/Dashboard'
@@ -24,9 +25,8 @@ import PeriodoLetivo from './pages/gestao/PeriodoLetivo'
 import Salas from './pages/gestao/Salas'
 import Cursos from './pages/gestao/Cursos'
 import Disciplinas from './pages/gestao/Disciplinas'
-import Series from './pages/gestao/Series'
 import Planos from './pages/gestao/Planos'
-import AnoLetivo from './pages/gestao/AnoLetivo'
+ 
 
 /* ─── Guarda de rota protegida ─────────────────────────────── */
 function RotaProtegida({ children, perfis }) {
@@ -37,8 +37,6 @@ function RotaProtegida({ children, perfis }) {
 }
 
 /* ─── Guarda de rota pública ───────────────────────────────── */
-// Quando autenticado = true, o React re-renderiza este componente
-// e o Navigate redireciona para /  — sem race condition, sem navigate manual.
 function RotaPublica({ children }) {
   const { autenticado } = useAuth()
   if (autenticado) return <Navigate to="/" replace />
@@ -49,10 +47,8 @@ function RotaPublica({ children }) {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Login — RotaPublica redireciona para / se já autenticado */}
       <Route path="/login" element={<RotaPublica><LoginPage /></RotaPublica>} />
 
-      {/* App — RotaProtegida redireciona para /login se não autenticado */}
       <Route path="/" element={<RotaProtegida><Layout /></RotaProtegida>}>
         <Route index element={<Dashboard />} />
 
@@ -67,7 +63,7 @@ function AppRoutes() {
         <Route path="matriculas" element={<RotaProtegida perfis={['admin','secretaria','coordenacao']}><MatriculasLista /></RotaProtegida>} />
         <Route path="notas" element={<RotaProtegida perfis={['admin','professor','coordenacao']}><NotasLancamento /></RotaProtegida>} />
         <Route path="frequencia" element={<RotaProtegida perfis={['admin','professor']}><FrequenciaLancamento /></RotaProtegida>} />
-        <Route path="frequencia/relatorio" element={<FrequenciaRelatorio />} />
+        <Route path="frequencia/relatorio" element={<RotaProtegida perfis={['admin','professor','coordenacao']}><FrequenciaRelatorio /></RotaProtegida>} />
 
         <Route path="financeiro" element={<RotaProtegida perfis={['admin','secretaria']}><FinanceiroDashboard /></RotaProtegida>} />
         <Route path="financeiro/mensalidades" element={<RotaProtegida perfis={['admin','secretaria']}><Mensalidades /></RotaProtegida>} />
@@ -84,9 +80,8 @@ function AppRoutes() {
         <Route path="gestao-geral/salas" element={<RotaProtegida perfis={['admin']}><Salas /></RotaProtegida>} />
         <Route path="gestao-geral/cursos" element={<RotaProtegida perfis={['admin']}><Cursos /></RotaProtegida>} />
         <Route path="gestao-geral/disciplinas" element={<RotaProtegida perfis={['admin']}><Disciplinas /></RotaProtegida>} />
-        <Route path="gestao-geral/series" element={<RotaProtegida perfis={['admin']}><Series /></RotaProtegida>} />
         <Route path="gestao-geral/planos" element={<RotaProtegida perfis={['admin']}><Planos /></RotaProtegida>} />
-        <Route path="gestao-geral/ano-letivo" element={<RotaProtegida perfis={['admin']}><AnoLetivo /></RotaProtegida>} />
+        
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -99,7 +94,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <AnoLetivoProvider>
+          <AppRoutes />
+        </AnoLetivoProvider>
       </AuthProvider>
     </BrowserRouter>
   )

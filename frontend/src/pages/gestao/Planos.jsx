@@ -51,7 +51,7 @@ export default function Planos() {
                     <td style={{fontWeight:600,color:'var(--text-primary)'}}>{item.nome||item.ano||'—'}</td>
                     <td style={{color:'var(--text-muted)',fontSize:13}}>{item.descricao||item.observacao||'—'}</td>
                     <td><Badge variant={item.ativo!==false?'success':'secondary'}>{item.ativo!==false?'Ativo':'Inativo'}</Badge></td>
-                    <td><Button variant="ghost" size="sm">✏ Editar</Button></td>
+                    <td><Button variant="ghost" size="sm" title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button></td>
                   </tr>
                 ))}
               </tbody>

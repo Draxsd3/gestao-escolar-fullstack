@@ -25,7 +25,7 @@ export default function Mensalidades() {
 
   const pagar = async e => {
     e.preventDefault(); setSaving(true)
-    try { await api.post(`/financeiro/mensalidades/${modal.id}/receber`, pay); setModal(null); fetch(page); setMsg('Pagamento registrado!') }
+    try { await api.post('/financeiro/recebimento', { mensalidade_id: modal.id, valor: Number(pay.valor), forma_pagamento: pay.forma_pagamento, data_recebimento: pay.data_recebimento }); setModal(null); fetch(page); setMsg('Pagamento registrado!') }
     catch { setMsg('Erro ao registrar.') }
     finally { setSaving(false) }
   }

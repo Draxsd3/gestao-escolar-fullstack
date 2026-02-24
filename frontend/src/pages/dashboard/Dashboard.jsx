@@ -28,7 +28,23 @@ export default function Dashboard() {
   const perfil = usuario?.perfil
 
   useEffect(() => {
-    api.get('/dashboard').then(r => setData(r.data)).catch(()=>setData({})).finally(()=>setLoading(false))
+    const ep = ['admin','secretaria','coordenacao'].includes(perfil) ? '/dashboard/admin'
+             : perfil === 'professor' ? '/dashboard/professor'
+             : perfil === 'responsavel' ? '/dashboard/responsavel' : '/dashboard/admin'
+    api.get(ep).then(r => {
+      const d = r.data
+      setData({
+        totalAlunos: d.total_alunos ?? d.totalAlunos ?? 0,
+        totalMatriculas: d.total_matriculas ?? d.totalMatriculas ?? 0,
+        totalTurmas: d.total_turmas ?? d.totalTurmas ?? 0,
+        totalProfessores: d.total_professores ?? d.totalProfessores ?? 0,
+        recebidoMes: d.recebido_mes ?? d.recebidoMes ?? 0,
+        inadimplentes: d.inadimplentes ?? 0,
+        comunicados: d.comunicados_recentes ?? d.comunicados ?? [],
+        turmas: d.turmas_disciplinas ?? d.turmas ?? [],
+        ...d,
+      })
+    }).catch(()=>setData({})).finally(()=>setLoading(false))
   }, [])
 
   if (loading) return <Loading />
@@ -109,9 +125,9 @@ export default function Dashboard() {
         <Card title="Minhas Turmas">
           {data?.turmas?.length ? (
             <div className="table-wrap"><table>
-              <thead><tr><th>Turma</th><th>Série</th><th>Disciplina</th></tr></thead>
+              <thead><tr><th>Turma</th><th>Curso</th><th>Disciplina</th></tr></thead>
               <tbody>{data.turmas.map((t,i)=>(
-                <tr key={i}><td style={{fontWeight:600}}>{t.turma}</td><td>{t.serie}</td><td>{t.disciplina}</td></tr>
+                <tr key={i}><td style={{fontWeight:600}}>{t.turma}</td><td>{t.curso}</td><td>{t.disciplina}</td></tr>
               ))}</tbody>
             </table></div>
           ) : <div style={{color:'var(--text-muted)',fontSize:13,padding:'12px 0'}}>Nenhuma turma atribuída.</div>}
@@ -123,7 +139,7 @@ export default function Dashboard() {
         <Card title="Minha Matrícula">
           {data?.matriculaAtiva ? (
             <div style={{ display:'flex', gap:24, flexWrap:'wrap' }}>
-              {[['Turma',data.matriculaAtiva.turma?.nome],['Série',data.matriculaAtiva.turma?.serie?.nome]].map(([k,v])=>(
+              {[['Turma',data.matriculaAtiva.turma?.nome],['Curso',data.matriculaAtiva.turma?.curso?.nome]].map(([k,v])=>(
                 <div key={k}>
                   <div style={{fontSize:11,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:4,fontFamily:'var(--mono)'}}>{k}</div>
                   <div style={{fontWeight:700,color:'var(--text-primary)',fontSize:15}}>{v||'—'}</div>

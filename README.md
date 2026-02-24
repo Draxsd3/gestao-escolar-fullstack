@@ -8,6 +8,7 @@ O projeto simula um sistema real utilizado por escolas, com controle de usuário
 
 # 🚀 Tecnologias Utilizadas
 
+<<<<<<< HEAD
 ## Backend
 - PHP 8.2+
 - Laravel 11
@@ -149,3 +150,9 @@ Este projeto demonstra:
 - Organização de código
 - Controle de acesso por perfil
 - Estrutura de sistema aplicado ao contexto escolar
+=======
+```
+*** Begin Patch
+*** End Patch
+├── frontend/         # Interface React + Vite
+>>>>>>> 4fd0aa2 (Update)

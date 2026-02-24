@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useAnoLetivo } from '../../context/AnoLetivoContext'
 import logoMinimal from '../../assets/logo-minimal.svg'
+import { setConfirmHandler, subscribeFeedback } from '../../services/feedback'
 
 /* ═══════════════════════════════════════════════════════════
    ESTRUTURA DE NAVEGAÇÃO
@@ -23,8 +25,7 @@ const NAV = [
           { to:'/gestao-geral/salas',           label:'Salas',          icon:IcoDoor     },
           { to:'/gestao-geral/cursos',          label:'Cursos',         icon:IcoBook     },
           { to:'/gestao-geral/disciplinas',     label:'Disciplinas',    icon:IcoPencil   },
-          { to:'/gestao-geral/series',          label:'Séries',         icon:IcoLayers   },
-          { to:'/gestao-geral/ano-letivo',      label:'Ano Letivo',     icon:IcoClock    },
+          
         ],
       },
     ],
@@ -43,6 +44,8 @@ const NAV = [
       },
       { type:'link', to:'/frequencia', label:'Frequência', icon:IcoFrequencia,
         perfis:['admin','professor','coordenacao'] },
+      { type:'link', to:'/frequencia/relatorio', label:'Histórico de Frequência', icon:IcoClock,
+        perfis:['admin','coordenacao','professor'] },
     ],
   },
   {
@@ -194,14 +197,39 @@ function NavGroup({ item, location, perfil }) {
 ═══════════════════════════════════════════════════════════ */
 export default function Layout() {
   const { usuario, logout } = useAuth()
+  const { labelVigente, periodoAtivo, anoLetivo } = useAnoLetivo()
   const location = useLocation()
   const navigate = useNavigate()
+  const [toasts, setToasts] = useState([])
+  const [confirmBox, setConfirmBox] = useState(null)
   const perfil = usuario?.perfil || 'aluno'
   const initials = usuario?.nome
     ? usuario.nome.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase()
     : '?'
 
   const handleLogout = async () => { await logout(); navigate('/login') }
+
+  useEffect(() => {
+    const unsubscribe = subscribeFeedback(({ type, message }) => {
+      if (!message) return
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      setToasts((prev) => [...prev, { id, type, message }])
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id))
+      }, 4500)
+    })
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    const dispose = setConfirmHandler((options) => new Promise((resolve) => {
+      setConfirmBox({
+        message: options?.message || 'Confirmar acao?',
+        resolve,
+      })
+    }))
+    return dispose
+  }, [])
 
   // Breadcrumb legível
   const crumbs = location.pathname === '/' ? ['Dashboard'] :
@@ -211,6 +239,50 @@ export default function Layout() {
 
   return (
     <div className="app-shell">
+      <div style={{ position:'fixed', bottom:14, right:14, zIndex:12000, display:'flex', flexDirection:'column', gap:8, maxWidth:380 }}>
+        {toasts.map((t) => (
+          <div key={t.id} style={{
+            padding:'10px 12px',
+            borderRadius:10,
+            border:'1px solid',
+            background: t.type === 'success' ? '#10b981' : '#ef4444',
+            borderColor: t.type === 'success' ? '#059669' : '#dc2626',
+            color: '#ffffff',
+            boxShadow:'0 8px 28px rgba(0,0,0,.12)',
+            fontSize:13,
+            lineHeight:1.45,
+            fontWeight:600,
+          }}>
+            {t.message}
+          </div>
+        ))}
+      </div>
+
+      {confirmBox && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.35)', zIndex:13000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ width:'min(92vw, 420px)', background:'#fff', borderRadius:12, padding:16, boxShadow:'0 20px 60px rgba(0,0,0,.25)' }}>
+            <div style={{ fontSize:15, fontWeight:700, color:'var(--text-primary)', marginBottom:10 }}>Confirmacao</div>
+            <div style={{ fontSize:13, color:'var(--text-secondary)', lineHeight:1.5, marginBottom:16 }}>
+              {confirmBox.message}
+            </div>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:8 }}>
+              <button
+                onClick={() => { confirmBox.resolve(false); setConfirmBox(null) }}
+                style={{ border:'1px solid var(--border)', background:'#fff', color:'var(--text-secondary)', borderRadius:8, padding:'8px 12px', fontSize:13, cursor:'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { confirmBox.resolve(true); setConfirmBox(null) }}
+                style={{ border:'1px solid rgba(26,109,212,.25)', background:'rgba(26,109,212,.08)', color:'#1a6dd4', borderRadius:8, padding:'8px 12px', fontSize:13, fontWeight:700, cursor:'pointer' }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Sidebar ── */}
       <aside className="sidebar">
         <div className="sidebar-logo">
@@ -289,6 +361,36 @@ export default function Layout() {
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            {/* ══ Indicador Ano Letivo / Período Ativo ══ */}
+            <div style={{
+              display:'flex', alignItems:'center', gap:6,
+              background: periodoAtivo ? 'linear-gradient(135deg, rgba(26,109,212,0.08), rgba(59,142,245,0.12))' : 'rgba(239,68,68,0.08)',
+              border: periodoAtivo ? '1px solid rgba(26,109,212,0.2)' : '1px solid rgba(239,68,68,0.2)',
+              borderRadius:8, padding:'5px 12px',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={periodoAtivo ? '#1a6dd4' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <span style={{
+                fontSize:12, fontWeight:700,
+                color: periodoAtivo ? '#1a6dd4' : '#ef4444',
+                whiteSpace:'nowrap',
+              }}>
+                {labelVigente}
+              </span>
+              {anoLetivo?.modelo_periodo && (
+                <span style={{
+                  fontSize:10, fontWeight:600,
+                  color: '#fff',
+                  background: anoLetivo.modelo_periodo === 'semestral' ? '#8b5cf6' : '#059669',
+                  borderRadius:4, padding:'1px 6px',
+                  textTransform:'uppercase', letterSpacing:0.3,
+                }}>
+                  {anoLetivo.modelo_periodo === 'semestral' ? 'SEM' : 'BIM'}
+                </span>
+              )}
+            </div>
+
             <span style={{ fontSize:13, color:'var(--text-secondary)', fontWeight:500 }}>{usuario?.nome}</span>
             <div style={{
               width:30, height:30, borderRadius:'50%',

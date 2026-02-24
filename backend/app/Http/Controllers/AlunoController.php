@@ -12,8 +12,11 @@ class AlunoController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Aluno::with(['matriculaAtiva.turma.serie', 'responsaveis'])
-            ->where('ativo', true);
+        $query = Aluno::with(['matriculaAtiva.turma.serie.nivel', 'responsaveis'])
+            ->where(function ($q) {
+                $q->where('ativo', true)
+                  ->orWhereNull('ativo');
+            });
 
         if ($request->filled('busca')) {
             $busca = "%{$request->busca}%";
@@ -30,13 +33,13 @@ class AlunoController extends Controller
             );
         }
 
-        if ($request->filled('serie_id')) {
+        if ($request->filled('curso_id')) {
             $query->whereHas('matriculas.turma', fn($q) =>
-                $q->where('serie_id', $request->serie_id)
+                $q->whereHas('serie', fn($s) => $s->where('nivel_id', $request->curso_id))
             );
         }
 
-        $alunos = $query->orderBy('nome')->paginate($request->get('por_pagina', 20));
+        $alunos = $query->orderBy('nome')->paginate($request->get('por_pagina', $request->get('per_page', 20)));
 
         return response()->json($alunos);
     }
@@ -46,7 +49,7 @@ class AlunoController extends Controller
         $aluno = Aluno::with([
             'usuario',
             'responsaveis',
-            'matriculas.turma.serie',
+            'matriculas.turma.serie.nivel',
             'matriculas.anoLetivo',
         ])->findOrFail($id);
 
@@ -69,6 +72,7 @@ class AlunoController extends Controller
             'informacoes_medicas' => ['nullable', 'string'],
         ]);
 
+        $data['ativo'] = true;
         $aluno = Aluno::create($data);
 
         Auditoria::registrar('criar', 'alunos', $aluno->id, null, $aluno->toArray());
@@ -117,7 +121,7 @@ class AlunoController extends Controller
     public function boletim(int $id): JsonResponse
     {
         $matricula = \App\Models\Matricula::with([
-            'aluno', 'turma.serie', 'anoLetivo',
+            'aluno', 'turma.serie.nivel', 'anoLetivo',
             'notas.disciplina', 'notas.periodo',
             'mediasPeriodo.disciplina', 'mediasPeriodo.periodo',
             'mediasAnuais.disciplina',

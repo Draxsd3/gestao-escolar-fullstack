@@ -10,4 +10,9 @@ class Disciplina extends Model
     protected $fillable = ['nome', 'codigo', 'carga_horaria_semanal', 'ativa'];
     protected $casts = ['ativa' => 'boolean'];
     public $timestamps = false;
+
+    public function cursos()
+    {
+        return $this->belongsToMany(NivelEnsino::class, 'curso_disciplina', 'disciplina_id', 'curso_id');
+    }
 }

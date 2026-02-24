@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Contrato extends Model
 {
     protected $table = 'contratos';
-    protected $fillable = ['matricula_id', 'responsavel_id', 'plano_id', 'data_inicio', 'data_fim', 'desconto', 'observacoes', 'ativo'];
+    protected $fillable = ['matricula_id', 'responsavel_id', 'plano_id', 'valor_negociado', 'desconto_pct', 'desconto_motivo', 'data_inicio', 'data_fim', 'ativo', 'criado_por'];
     protected $casts = ['data_inicio' => 'date', 'data_fim' => 'date', 'ativo' => 'boolean'];
 
     const CREATED_AT = 'criado_em';

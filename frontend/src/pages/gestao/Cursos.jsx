@@ -1,57 +1,140 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
-import { Button, Badge, Loading, EmptyState, Modal, Alert } from '../../components/ui'
+import { Alert, Badge, Button, EmptyState, Loading, Modal } from '../../components/ui'
+
+const FORM_INITIAL = { nome: '', descricao: '' }
+
+function formatApiError(err, fallback) {
+  const data = err.response?.data || {}
+  const message = data.message || fallback
+  const hint = data.hint ? ` ${data.hint}` : ''
+  return `${message}${hint}`
+}
 
 export default function Cursos() {
-  const [items, setItems]     = useState([])
+  const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [modal, setModal]     = useState(false)
-  const [saving, setSaving]   = useState(false)
-  const [error, setError]     = useState('')
-  const [form, setForm]       = useState({ nome: '', descricao: '' })
+  const [modalNew, setModalNew] = useState(false)
+  const [modalEdit, setModalEdit] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [form, setForm] = useState(FORM_INITIAL)
+  const [editItem, setEditItem] = useState(null)
   const navigate = useNavigate()
 
   const fetch = () => {
     setLoading(true)
-    api.get('/cursos').then(r => setItems(r.data.data || r.data || [])).catch(()=>setItems([])).finally(()=>setLoading(false))
+    api.get('/cursos')
+      .then((r) => setItems(r.data.data || r.data || []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false))
   }
-  useEffect(()=>fetch(),[])
 
-  const save = async e => {
-    e.preventDefault(); setSaving(true); setError('')
-    try { await api.post('/cursos', form); setModal(false); setForm({nome:'',descricao:''}); fetch() }
-    catch(err) { setError(err.response?.data?.message || 'Erro ao salvar.') }
-    finally { setSaving(false) }
+  useEffect(() => { fetch() }, [])
+
+  const closeNew = () => {
+    setModalNew(false)
+    setForm(FORM_INITIAL)
+    setError('')
+  }
+
+  const closeEdit = () => {
+    setModalEdit(false)
+    setEditItem(null)
+    setForm(FORM_INITIAL)
+    setError('')
+  }
+
+  const saveNew = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      await api.post('/cursos', {
+        nome: form.nome,
+        descricao: form.descricao || null,
+      })
+      closeNew()
+      fetch()
+    } catch (err) {
+      setError(formatApiError(err, 'Erro ao salvar curso.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openEdit = (item) => {
+    setEditItem(item)
+    setForm({
+      nome: item.nome || '',
+      descricao: item.descricao || '',
+    })
+    setError('')
+    setModalEdit(true)
+  }
+
+  const saveEdit = async (e) => {
+    e.preventDefault()
+    if (!editItem) return
+    setSaving(true)
+    setError('')
+    try {
+      await api.put(`/cursos/${editItem.id}`, {
+        nome: form.nome,
+        descricao: form.descricao || null,
+      })
+      closeEdit()
+      fetch()
+    } catch (err) {
+      setError(formatApiError(err, 'Erro ao salvar curso.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const removeItem = async (item) => {
+    setError('')
+    try {
+      await api.delete(`/cursos/${item.id}`)
+      fetch()
+    } catch (err) {
+      setError(formatApiError(err, 'Erro ao excluir curso.'))
+    }
   }
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <button onClick={()=>navigate('/gestao-geral')} style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',fontSize:13,fontFamily:'var(--font)',marginBottom:6,display:'flex',alignItems:'center',gap:4,padding:0}}>
-            ← Gestão Geral
+          <button onClick={() => navigate('/gestao-geral')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'var(--font)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}>
+            {'<-'} Gestao Geral
           </button>
           <div className="page-title">Cursos</div>
         </div>
-        <Button onClick={()=>setModal(true)}>+ Novo</Button>
+        <Button onClick={() => setModalNew(true)}>+ Novo</Button>
       </div>
 
+      {error && <Alert variant="error" onClose={() => setError('')}>{error}</Alert>}
+
       <div className="card">
-        {loading ? <Loading /> : items.length===0 ? (
-          <EmptyState icon="📋" title="Nenhum registro encontrado" message="Clique em + Novo para adicionar." />
+        {loading ? <Loading /> : items.length === 0 ? (
+          <EmptyState icon="[]" title="Nenhum curso encontrado" message="Clique em + Novo para adicionar." />
         ) : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>#</th><th>Nome</th><th>Descrição</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>#</th><th>Nome</th><th>Descricao</th><th>Status</th><th></th></tr></thead>
               <tbody>
-                {items.map(item => (
+                {items.map((item) => (
                   <tr key={item.id}>
-                    <td style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--text-muted)'}}>{item.id}</td>
-                    <td style={{fontWeight:600,color:'var(--text-primary)'}}>{item.nome||item.ano||'—'}</td>
-                    <td style={{color:'var(--text-muted)',fontSize:13}}>{item.descricao||item.observacao||'—'}</td>
-                    <td><Badge variant={item.ativo!==false?'success':'secondary'}>{item.ativo!==false?'Ativo':'Inativo'}</Badge></td>
-                    <td><Button variant="ghost" size="sm">✏ Editar</Button></td>
+                    <td style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text-muted)' }}>{item.id}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.nome || '-'}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{item.descricao || '-'}</td>
+                    <td><Badge variant={item.ativo !== false ? 'success' : 'secondary'}>{item.ativo !== false ? 'Ativo' : 'Inativo'}</Badge></td>
+                    <td style={{ display: 'flex', gap: 6 }}>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(item)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeItem(item)} title="Excluir" style={{ fontSize: 18, lineHeight: 1 }}>🗑</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -60,15 +143,26 @@ export default function Cursos() {
         )}
       </div>
 
-      <Modal isOpen={modal} onClose={()=>setModal(false)} title="Novo Registro"
-        footer={<><Button variant="secondary" onClick={()=>setModal(false)}>Cancelar</Button><Button type="submit" form="formNew" disabled={saving}>{saving?'Salvando...':'Salvar'}</Button></>}>
-        {error && <Alert variant="error">{error}</Alert>}
-        <form id="formNew" onSubmit={save} style={{display:'flex',flexDirection:'column',gap:14}}>
+      <Modal isOpen={modalNew} onClose={closeNew} title="Novo Curso"
+        footer={<><Button variant="secondary" onClick={closeNew}>Cancelar</Button><Button type="submit" form="formCursoNew" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button></>}>
+        <form id="formCursoNew" onSubmit={saveNew} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="form-group"><label className="form-label">Nome *</label>
-            <input className="form-control" required value={form.nome} onChange={e=>setForm(f=>({...f,nome:e.target.value}))} placeholder="Nome" />
+            <input className="form-control" required value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Nome do curso" />
           </div>
-          <div className="form-group"><label className="form-label">Descrição</label>
-            <textarea className="form-control" rows={3} value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))} placeholder="Descrição opcional" />
+          <div className="form-group"><label className="form-label">Descricao</label>
+            <textarea className="form-control" rows={3} value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descricao opcional" />
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={modalEdit} onClose={closeEdit} title="Editar Curso"
+        footer={<><Button variant="secondary" onClick={closeEdit}>Cancelar</Button><Button type="submit" form="formCursoEdit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</Button></>}>
+        <form id="formCursoEdit" onSubmit={saveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="form-group"><label className="form-label">Nome *</label>
+            <input className="form-control" required value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Nome do curso" />
+          </div>
+          <div className="form-group"><label className="form-label">Descricao</label>
+            <textarea className="form-control" rows={3} value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descricao opcional" />
           </div>
         </form>
       </Modal>

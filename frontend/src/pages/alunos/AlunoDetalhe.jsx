@@ -31,7 +31,7 @@ export default function AlunoDetalhe() {
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <Button variant="secondary" onClick={() => navigate('/alunos')}>← Voltar</Button>
-          <Button onClick={() => navigate(`/alunos/${id}/editar`)}>✏ Editar</Button>
+          <Button onClick={() => navigate(`/alunos/${id}/editar`)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
         </div>
       </div>
 

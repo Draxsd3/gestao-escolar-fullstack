@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PlanoPagamento extends Model
 {
     protected $table = 'planos_pagamento';
-    protected $fillable = ['nome', 'descricao', 'valor_mensalidade', 'dia_vencimento', 'juros_mes', 'multa', 'ativo'];
+    protected $fillable = ['nome', 'descricao', 'valor_mensalidade', 'dia_vencimento', 'desconto_antecipado', 'juros_atraso_diario', 'multa_atraso', 'ativo'];
     protected $casts = ['ativo' => 'boolean'];
     public $timestamps = false;
 

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useAnoLetivo } from '../../context/AnoLetivoContext'
 import { Button, Alert, Loading, Card, Badge } from '../../components/ui'
 
 export default function FrequenciaLancamento() {
+  const { labelVigente, periodoAtivo } = useAnoLetivo()
   const [turmas, setTurmas]     = useState([])
   const [turmaId, setTurmaId]   = useState('')
   const [disciplinas, setDisciplinas] = useState([])
@@ -42,9 +44,19 @@ export default function FrequenciaLancamento() {
   const handleSave = async () => {
     setSaving(true); setMsg(''); setErr('')
     try {
-      await api.post('/frequencia/lancar', { turma_id:turmaId, disciplina_id:disciplinaId||null, data_aula:data, presencas:presenca })
+      const frequencias = Object.entries(presenca).map(([aid, pres]) => ({
+        aluno_id: Number(aid), presente: !!pres, justificativa: null
+      }))
+      await api.post('/frequencia/lancar', {
+        turma_id: Number(turmaId),
+        disciplina_id: disciplinaId ? Number(disciplinaId) : 1,
+        data_aula: data,
+        numero_aulas: 1,
+        conteudo: null,
+        frequencias,
+      })
       setMsg('Frequência salva com sucesso!')
-    } catch { setErr('Erro ao salvar frequência.') }
+    } catch(e) { setErr(e.response?.data?.message || 'Erro ao salvar frequência.') }
     finally { setSaving(false) }
   }
 
@@ -54,8 +66,12 @@ export default function FrequenciaLancamento() {
   return (
     <div>
       <div className="page-header">
-        <div><div className="page-title">Lançamento de Frequência</div><div className="page-sub">Registre a presença dos alunos</div></div>
+        <div><div className="page-title">Lançamento de Frequência</div><div className="page-sub">Registre a presença dos alunos — <strong>{labelVigente}</strong></div></div>
       </div>
+
+      {!periodoAtivo && (
+        <Alert variant="error">Nenhum período letivo ativo. Não é possível lançar frequências. Verifique a configuração do ano letivo.</Alert>
+      )}
 
       <Card title="Filtros" style={{ marginBottom:20 }}>
         <div className="form-grid">

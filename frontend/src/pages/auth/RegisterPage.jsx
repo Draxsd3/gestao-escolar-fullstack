@@ -22,7 +22,7 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      await api.post('/auth/register', form)
+      await api.post('/auth/registrar-admin', form)
       setSucesso('Usuario criado com sucesso. Faca login para continuar.')
       setTimeout(() => navigate('/login'), 1200)
     } catch (err) {

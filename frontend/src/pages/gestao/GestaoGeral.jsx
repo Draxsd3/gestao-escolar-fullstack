@@ -32,18 +32,7 @@ const MODULOS = [
     to: '/turmas',
     Icon: IconUsers,
   },
-  {
-    titulo: 'Série',
-    desc: 'Configure as séries e níveis de ensino da escola.',
-    to: '/gestao-geral/series',
-    Icon: IconLayers,
-  },
-  {
-    titulo: 'Ano Letivo',
-    desc: 'Gerencie os anos letivos e períodos de avaliação.',
-    to: '/gestao-geral/ano-letivo',
-    Icon: IconClock,
-  },
+  
   {
     titulo: 'Plano de Pagamento',
     desc: 'Configure planos de mensalidade e condições de pagamento.',

@@ -78,6 +78,19 @@ INSERT INTO disciplinas (id, nome, codigo, carga_horaria_semanal) VALUES
 (15, 'Literatura',      'LIT',  2);
 
 -- ============================================================
+-- salas: (id, nome, descricao*, ativo*, criado_em*, atualizado_em*)
+-- ============================================================
+INSERT INTO salas (id, nome, descricao, ativo) VALUES
+(1, 'Sala 101', 'Bloco A - Terreo', TRUE),
+(2, 'Sala 102', 'Bloco A - Terreo', TRUE),
+(3, 'Sala 103', 'Bloco A - 1o Andar', TRUE),
+(4, 'Sala 104', 'Bloco A - 1o Andar', TRUE),
+(5, 'Sala 201', 'Bloco B - 2o Andar', TRUE),
+(6, 'Sala 202', 'Bloco B - 2o Andar', TRUE),
+(7, 'Sala 203', 'Bloco B - 2o Andar', TRUE),
+(8, 'Sala 204', 'Bloco B - 2o Andar', TRUE);
+
+-- ============================================================
 -- turmas: (id, serie_id, ano_letivo_id, nome, turno, vagas*, sala*, ativa*, criado_em*)
 -- ============================================================
 INSERT INTO turmas (id, serie_id, ano_letivo_id, nome, turno, vagas, sala) VALUES
@@ -291,4 +304,3 @@ INSERT INTO mensalidades (contrato_id, competencia, valor_original, valor_final,
 (2, '2025-06-01', 1200.00, 1200.00, '2025-06-10', 'pendente', NULL),
 (3, '2025-02-01',  600.00,  600.00, '2025-02-10', 'pago',    '2025-02-15'),
 (3, '2025-03-01',  600.00,  600.00, '2025-03-10', 'pendente', NULL);
-

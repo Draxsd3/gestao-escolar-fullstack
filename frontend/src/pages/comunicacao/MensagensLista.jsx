@@ -13,9 +13,9 @@ export default function MensagensLista() {
   const [users, setUsers] = useState([])
 
   const fetch = () => { setLoading(true); api.get('/mensagens').then(r=>setMsgs(r.data.data||r.data||[])).finally(()=>setLoading(false)) }
-  useEffect(()=>{ fetch(); api.get('/usuarios').catch(()=>({data:[]})).then(r=>setUsers(r.data.data||r.data||[])) },[])
+  useEffect(()=>{ fetch(); api.get('/usuarios-lista').catch(()=>({data:[]})).then(r=>setUsers(r.data.data||r.data||[])) },[])
 
-  const marcarLida = async id => { await api.put(`/mensagens/${id}/lida`).catch(()=>{}); fetch() }
+  const marcarLida = async id => { await api.patch(`/mensagens/${id}/lida`).catch(()=>{}); fetch() }
 
   const save = async e => {
     e.preventDefault(); setSaving(true)

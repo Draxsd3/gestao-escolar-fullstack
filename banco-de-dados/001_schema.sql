@@ -69,6 +69,15 @@ CREATE TABLE anos_letivos (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE salas (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL UNIQUE,
+    descricao VARCHAR(255) NULL,
+    ativo BOOLEAN DEFAULT TRUE,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE turmas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     serie_id TINYINT UNSIGNED NOT NULL,
@@ -90,6 +99,15 @@ CREATE TABLE disciplinas (
     codigo VARCHAR(20) UNIQUE,
     carga_horaria_semanal TINYINT UNSIGNED DEFAULT 2,
     ativa BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE curso_disciplina (
+    curso_id TINYINT UNSIGNED NOT NULL,
+    disciplina_id SMALLINT UNSIGNED NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (curso_id, disciplina_id),
+    FOREIGN KEY (curso_id) REFERENCES niveis_ensino(id) ON DELETE CASCADE,
+    FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id) ON DELETE CASCADE
 );
 
 CREATE TABLE grade_curricular (

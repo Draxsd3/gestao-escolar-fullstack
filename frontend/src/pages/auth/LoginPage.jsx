@@ -2,6 +2,9 @@ import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
 import logoLarge from '../../assets/logo-large.png'
+import adminPortalImg from '../../assets/admin-portal.png'
+import professorPortalImg from '../../assets/professor-portal.png'
+import alunoPortalImg from '../../assets/aluno-portal.png'
 
 /* ══════════════════════════════════════════════════════════
    CORES — inspiradas no Exitus: fundo azul-marinho,
@@ -26,9 +29,9 @@ const FONT = "'Inter', sans-serif"
 const MONO = "'JetBrains Mono', monospace"
 
 const PORTAIS = [
-  { key:'admin',     label:'Admin',   demo:'admin@babel.edu.br',         Illu: IlluAdmin     },
-  { key:'professor', label:'Docente', demo:'roberto.alves@babel.edu.br', Illu: IlluProfessor },
-  { key:'aluno',     label:'Aluno',   demo:'lucas.santos@babel.edu.br',  Illu: IlluAluno     },
+  { key:'admin',     label:'Admin',   Illu: IlluAdmin,     img: adminPortalImg },
+  { key:'professor', label:'Docente', Illu: IlluProfessor, img: professorPortalImg },
+  { key:'aluno',     label:'Aluno',   Illu: IlluAluno,     img: alunoPortalImg },
 ]
 
 /* ══════════════════════════════════════════════════════════
@@ -158,7 +161,11 @@ function PortalCard({ portal, onSelect }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 18,
       }}>
-        <Illu />
+        {portal.img ? (
+          <img src={portal.img} alt="ilustração" style={{ maxWidth: '90%', height: 200, objectFit: 'contain' }} />
+        ) : (
+          <Illu size={180} />
+        )}
       </div>
 
       {/* Botão Acessar */}
@@ -185,7 +192,7 @@ function PortalCard({ portal, onSelect }) {
    TELA 2 — Login com formulário
 ══════════════════════════════════════════════════════════ */
 function FormLogin({ portal, onVoltar }) {
-  const [email, setEmail]     = useState(portal.demo)
+  const [email, setEmail]     = useState('')
   const [senha, setSenha]     = useState('')
   const [show, setShow]       = useState(false)
   const [loading, setLoading] = useState(false)
@@ -298,17 +305,6 @@ function FormLogin({ portal, onVoltar }) {
                 {show ? <EyeOff /> : <Eye />}
               </button>
             </div>
-          </div>
-
-          {/* Demo hint */}
-          <div style={{
-            padding: '8px 12px', background: '#f0fdfa',
-            borderRadius: 8, fontSize: 12, color: '#115e59',
-            border: '1px solid #ccfbf1',
-          }}>
-            <span style={{ fontFamily: MONO, fontWeight: 600, color: C.tealHov, fontSize: 11 }}>DEMO</span>
-            {'  '}Senha:{' '}
-            <span style={{ fontFamily: MONO, fontWeight: 600, color: '#0d9488' }}>Babel@2025</span>
           </div>
 
           {/* Botão entrar */}

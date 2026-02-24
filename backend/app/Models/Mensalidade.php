@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Mensalidade extends Model
 {
     protected $table = 'mensalidades';
-    protected $fillable = ['contrato_id', 'competencia', 'data_vencimento', 'valor_bruto', 'desconto', 'valor_final', 'situacao'];
+    protected $fillable = ['contrato_id', 'competencia', 'valor_original', 'valor_desconto', 'valor_acrescimo', 'valor_final', 'data_vencimento', 'situacao', 'data_pagamento', 'observacoes'];
     protected $casts = ['competencia' => 'date', 'data_vencimento' => 'date'];
     public $timestamps = false;
 

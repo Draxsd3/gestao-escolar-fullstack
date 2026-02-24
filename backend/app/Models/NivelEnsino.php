@@ -11,4 +11,5 @@ class NivelEnsino extends Model
     public $timestamps = false;
 
     public function series() { return $this->hasMany(Serie::class, 'nivel_id'); }
+    public function disciplinas() { return $this->belongsToMany(Disciplina::class, 'curso_disciplina', 'curso_id', 'disciplina_id'); }
 }

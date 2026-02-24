@@ -10,6 +10,8 @@ class Matricula extends Model
     use HasFactory;
 
     protected $table = 'matriculas';
+    public const CREATED_AT = 'criado_em';
+    public const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = [
         'aluno_id', 'turma_id', 'ano_letivo_id', 'numero_matricula',
@@ -28,12 +30,13 @@ class Matricula extends Model
     public function contrato() { return $this->hasOne(Contrato::class, 'matricula_id'); }
     public function mediasAnuais() { return $this->hasMany(MediaAnual::class, 'matricula_id'); }
     public function mediasPeriodo() { return $this->hasMany(MediaPeriodo::class, 'matricula_id'); }
+    public function boletins() { return $this->hasMany(Boletim::class, 'matricula_id'); }
 
-    public static function gerarNumero(int $anoLetivo, int $turmaId): string
+    public static function gerarNumero(int $anoLetivoId, int $turmaId): string
     {
-        $ultimo = static::where('ano_letivo_id', $anoLetivo)
+        $ultimo = static::where('ano_letivo_id', $anoLetivoId)
             ->where('turma_id', $turmaId)
             ->count();
-        return sprintf('%d%03d%03d', $anoLetivo, $turmaId, $ultimo + 1);
+        return sprintf('%d%03d%03d', $anoLetivoId, $turmaId, $ultimo + 1);
     }
 }

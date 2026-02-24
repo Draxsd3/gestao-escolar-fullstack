@@ -38,7 +38,11 @@ export default function AlunoForm() {
       else await api.post('/alunos', payload)
       navigate('/alunos')
     } catch(err) {
-      setError(err.response?.data?.message || 'Erro ao salvar. Verifique os dados.')
+      const detail = err.response?.data
+      const message = detail?.message
+        || (detail?.errors ? Object.values(detail.errors).flat().join('. ') : null)
+        || 'Erro ao salvar. Verifique os campos obrigatórios.'
+      setError(message)
     } finally { setSaving(false) }
   }
 

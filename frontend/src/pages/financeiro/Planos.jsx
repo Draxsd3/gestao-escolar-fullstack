@@ -19,7 +19,12 @@ export default function Planos() {
   const save = async e => {
     e.preventDefault(); setSaving(true); setError('')
     try {
-      await api.post('/planos-pagamento', form)
+      await api.post('/planos-pagamento', {
+        nome: form.nome,
+        descricao: form.descricao,
+        valor_mensalidade: Number(form.valor) || 0,
+        dia_vencimento: Number(form.dia_vencimento) || 10,
+      })
       setModal(false)
       setForm({ nome: '', descricao: '', valor: '', dia_vencimento: 10 })
       fetch()
@@ -60,7 +65,7 @@ export default function Planos() {
                   <tr key={item.id}>
                     <td style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text-muted)' }}>{item.id}</td>
                     <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.nome}</td>
-                    <td style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(item.valor)}</td>
+                    <td style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(item.valor_mensalidade || item.valor)}</td>
                     <td style={{ color: 'var(--text-muted)' }}>Dia {item.dia_vencimento || '—'}</td>
                     <td><Badge variant={item.ativo !== false ? 'success' : 'secondary'}>{item.ativo !== false ? 'Ativo' : 'Inativo'}</Badge></td>
                   </tr>

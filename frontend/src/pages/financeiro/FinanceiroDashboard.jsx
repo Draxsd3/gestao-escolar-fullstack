@@ -5,7 +5,16 @@ import { StatCard, Loading, Card } from '../../components/ui'
 export default function FinanceiroDashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  useEffect(() => { api.get('/financeiro/dashboard').then(r=>setData(r.data)).catch(()=>setData({})).finally(()=>setLoading(false)) }, [])
+  useEffect(() => { api.get('/financeiro/resumo').then(r=>{
+    const d = r.data
+    setData({
+      recebido_mes: d.total_recebido ?? d.recebido_mes ?? 0,
+      a_receber: d.total_a_receber ?? d.a_receber ?? 0,
+      inadimplente: d.total_inadimplencia ?? d.inadimplente ?? 0,
+      total_contratos: d.qtd_inadimplentes ?? d.total_contratos ?? 0,
+      ...d,
+    })
+  }).catch(()=>setData({})).finally(()=>setLoading(false)) }, [])
   if (loading) return <Loading />
   const fmt = v => v ? `R$ ${Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2})}` : 'R$ 0,00'
   return (

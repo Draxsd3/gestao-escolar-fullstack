@@ -2,98 +2,91 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Aluno;
-use App\Models\Turma;
-use App\Models\Matricula;
-use App\Models\Mensalidade;
-use App\Models\Comunicado;
-use App\Models\Professor;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\{Request, JsonResponse};
 use Illuminate\Support\Facades\DB;
+use App\Models\{Aluno, Matricula, Turma, Mensalidade, AnoLetivo, Comunicado};
 
 class DashboardController extends Controller
 {
-    public function index(): JsonResponse
+    public function admin(): JsonResponse
     {
-        $user = auth()->user();
-        $perfil = $user->perfil?->nome;
+        $anoLetivo = AnoLetivo::ativo();
 
-        return match($perfil) {
-            'admin', 'secretaria' => $this->dashboardAdmin(),
-            'professor'           => $this->dashboardProfessor($user),
-            'responsavel'         => $this->dashboardResponsavel($user),
-            'aluno'               => $this->dashboardAluno($user),
-            default               => response()->json(['message' => 'Dashboard não disponível'], 403),
-        };
-    }
+        $totalAlunos = Aluno::where('ativo', true)->count();
+        $totalMatriculas = $anoLetivo
+            ? Matricula::where('ano_letivo_id', $anoLetivo->id)->where('situacao', 'ativa')->count()
+            : 0;
+        $totalTurmas = Turma::where('ativa', true)
+            ->when($anoLetivo, fn($q) => $q->where('ano_letivo_id', $anoLetivo->id))
+            ->count();
 
-    private function dashboardAdmin(): JsonResponse
-    {
-        $mesAtual = now()->format('Y-m');
-
-        $totalAlunos     = Aluno::count();
-        $totalMatriculas = Matricula::where('situacao', 'ativa')->count();
-        $totalTurmas     = Turma::where('ativa', true)->count();
-        $totalProfessores= Professor::where('ativo', true)->count();
-
-        $recebidoMes = Mensalidade::whereRaw("DATE_FORMAT(competencia, '%Y-%m') = ?", [$mesAtual])
-            ->where('situacao', 'pago')->sum('valor_final');
+        $recebidoMes = Mensalidade::whereYear('competencia', now()->year)
+            ->whereMonth('competencia', now()->month)
+            ->whereIn('situacao', ['pago','parcial'])
+            ->sum('valor_final');
 
         $inadimplentes = Mensalidade::where('situacao', 'pendente')
-            ->where('data_vencimento', '<', now())->count();
+            ->where('data_vencimento', '<', now())
+            ->count();
 
         $comunicados = Comunicado::where('publicado', true)
-            ->orderByDesc('publicado_em')->limit(5)->get();
+            ->orderBy('publicado_em', 'desc')
+            ->take(5)
+            ->get(['id', 'titulo', 'publico_alvo', 'publicado_em']);
 
-        return response()->json(compact(
-            'totalAlunos', 'totalMatriculas', 'totalTurmas', 'totalProfessores',
-            'recebidoMes', 'inadimplentes', 'comunicados'
-        ));
+        return response()->json([
+            'total_alunos'      => $totalAlunos,
+            'total_matriculas'  => $totalMatriculas,
+            'total_turmas'      => $totalTurmas,
+            'recebido_mes'      => $recebidoMes,
+            'inadimplentes'     => $inadimplentes,
+            'ano_letivo'        => $anoLetivo,
+            'comunicados_recentes' => $comunicados,
+        ]);
     }
 
-    private function dashboardProfessor($user): JsonResponse
+    public function professor(Request $request): JsonResponse
     {
+        $user = $request->user();
         $professor = $user->professor;
-        if (!$professor) return response()->json(['turmas' => [], 'comunicados' => []]);
+
+        if (!$professor) {
+            return response()->json(['message' => 'Professor não encontrado.'], 404);
+        }
 
         $turmas = DB::table('professor_turma_disciplina as ptd')
             ->join('turmas as t', 't.id', '=', 'ptd.turma_id')
-            ->join('disciplinas as d', 'd.id', '=', 'ptd.disciplina_id')
             ->join('series as s', 's.id', '=', 't.serie_id')
+            ->join('niveis_ensino as ne', 'ne.id', '=', 's.nivel_id')
+            ->join('disciplinas as d', 'd.id', '=', 'ptd.disciplina_id')
             ->where('ptd.professor_id', $professor->id)
-            ->select('t.nome as turma', 's.nome as serie', 'd.nome as disciplina', 'ptd.turma_id', 'ptd.disciplina_id')
+            ->where('ptd.ano_letivo_id', AnoLetivo::ativo()?->id)
+            ->select('t.id as turma_id', 't.nome as turma', 'ne.nome as curso', 'd.id as disciplina_id', 'd.nome as disciplina')
             ->get();
 
-        $comunicados = Comunicado::whereIn('publico_alvo', ['todos', 'professores'])
-            ->where('publicado', true)->orderByDesc('publicado_em')->limit(5)->get();
-
-        return response()->json(compact('turmas', 'comunicados'));
+        return response()->json([
+            'professor'       => $professor->load('usuario'),
+            'turmas_disciplinas' => $turmas,
+        ]);
     }
 
-    private function dashboardResponsavel($user): JsonResponse
+    public function responsavel(Request $request): JsonResponse
     {
+        $user = $request->user();
         $responsavel = $user->responsavel;
-        if (!$responsavel) return response()->json(['filhos' => [], 'comunicados' => []]);
 
-        $filhos = $responsavel->alunos()->with(['matriculas' => fn($q) => $q->where('situacao','ativa')->with('turma')])->get();
+        if (!$responsavel) {
+            return response()->json(['message' => 'Responsável não encontrado.'], 404);
+        }
 
-        $comunicados = Comunicado::whereIn('publico_alvo', ['todos', 'responsaveis'])
-            ->where('publicado', true)->orderByDesc('publicado_em')->limit(5)->get();
+        $alunos = $responsavel->alunos()->with([
+            'matriculaAtiva.turma.serie.nivel',
+            'matriculaAtiva.mediasAnuais.disciplina',
+        ])->get();
 
-        return response()->json(compact('filhos', 'comunicados'));
-    }
-
-    private function dashboardAluno($user): JsonResponse
-    {
-        $aluno = $user->aluno;
-        if (!$aluno) return response()->json(['message' => 'Aluno não encontrado']);
-
-        $matriculaAtiva = $aluno->matriculas()->where('situacao', 'ativa')
-            ->with(['turma.serie', 'mediasAnuais.disciplina'])->first();
-
-        $comunicados = Comunicado::whereIn('publico_alvo', ['todos', 'alunos'])
-            ->where('publicado', true)->orderByDesc('publicado_em')->limit(5)->get();
-
-        return response()->json(compact('matriculaAtiva', 'comunicados'));
+        return response()->json([
+            'responsavel' => $responsavel,
+            'alunos'      => $alunos,
+        ]);
     }
 }

@@ -10,6 +10,8 @@ class Aluno extends Model
     use HasFactory;
 
     protected $table = 'alunos';
+    public const CREATED_AT = 'criado_em';
+    public const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = [
         'usuario_id', 'nome', 'nome_social', 'cpf', 'rg',
@@ -37,7 +39,7 @@ class Aluno extends Model
     {
         return $this->hasOne(Matricula::class, 'aluno_id')
             ->where('situacao', 'ativa')
-            ->latest();
+            ->latest('criado_em');
     }
 
     public function getIdadeAttribute(): ?int
