@@ -1,0 +1,4 @@
+# Ajustes apenas para estatistica de linguagem no GitHub (Linguist)
+# Nao afeta execucao do sistema.
+
+frontend/** linguist-vendored
