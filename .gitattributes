@@ -2,3 +2,9 @@
 # Nao afeta execucao do sistema.
 
 frontend/** linguist-vendored
+
+# Reconta apenas uma parte pequena de JS/JSX para aparecer no grafico
+frontend/src/App.jsx linguist-vendored=false
+frontend/src/components/layout/Layout.jsx linguist-vendored=false
+frontend/src/pages/auth/LoginPage.jsx linguist-vendored=false
+frontend/src/pages/comunicacao/MensagensLista.jsx linguist-vendored=false
