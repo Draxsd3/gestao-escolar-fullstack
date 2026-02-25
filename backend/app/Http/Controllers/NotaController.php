@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{AnoLetivo, Nota, Matricula, MediaPeriodo, Auditoria, Turma, PeriodoAvaliacao};
+use App\Models\{AnoLetivo, Nota, Matricula, MediaPeriodo, Auditoria, Turma, PeriodoAvaliacao, Disciplina};
 use Illuminate\Http\{Request, JsonResponse};
 use Illuminate\Support\Facades\{DB, Schema};
 use Illuminate\Validation\ValidationException;
@@ -28,11 +28,43 @@ class NotaController extends Controller
             'turma_id' => ['nullable', 'exists:turmas,id'],
         ]);
 
-        $turmas = Turma::query()
+        $usuario = $request->user()->loadMissing('perfil', 'professor');
+        $isProfessor = $usuario?->perfil?->nome === 'professor';
+        $professorId = $usuario?->professor?->id;
+        $usaVinculoProfessorDisciplina = Schema::hasTable('professor_disciplina');
+
+        $turmasQuery = Turma::query()
             ->select('id', 'nome', 'sala', 'ano_letivo_id')
             ->where('ativa', true)
-            ->orderBy('nome')
-            ->get();
+            ->orderBy('nome');
+
+        if ($isProfessor && $professorId) {
+            $turmasQuery->where(function ($q) use ($professorId, $usaVinculoProfessorDisciplina) {
+                $q->whereExists(function ($sq) use ($professorId) {
+                    $sq->select(DB::raw(1))
+                        ->from('professor_turma_disciplina as ptd')
+                        ->whereColumn('ptd.turma_id', 'turmas.id')
+                        ->where('ptd.professor_id', $professorId);
+                })->orWhereExists(function ($sq) use ($professorId) {
+                    $sq->select(DB::raw(1))
+                        ->from('horarios as h')
+                        ->whereColumn('h.turma_id', 'turmas.id')
+                        ->where('h.professor_id', $professorId);
+                });
+
+                if ($usaVinculoProfessorDisciplina) {
+                    $q->orWhereExists(function ($sq) use ($professorId) {
+                        $sq->select(DB::raw(1))
+                            ->from('grade_curricular as gc')
+                            ->join('professor_disciplina as pd', 'pd.disciplina_id', '=', 'gc.disciplina_id')
+                            ->whereColumn('gc.turma_id', 'turmas.id')
+                            ->where('pd.professor_id', $professorId);
+                    });
+                }
+            });
+        }
+
+        $turmas = $turmasQuery->get();
 
         if (!$request->filled('turma_id')) {
             // Retornar info do ano/período ativo
@@ -61,6 +93,34 @@ class NotaController extends Controller
             ->select('id', 'nome', 'sala', 'ano_letivo_id')
             ->findOrFail($request->integer('turma_id'));
 
+        if ($isProfessor && $professorId) {
+            $temAcesso = DB::table('professor_turma_disciplina')
+                ->where('professor_id', $professorId)
+                ->where('turma_id', $turma->id)
+                ->exists();
+
+            if (!$temAcesso) {
+                $temAcesso = DB::table('horarios')
+                    ->where('professor_id', $professorId)
+                    ->where('turma_id', $turma->id)
+                    ->exists();
+            }
+
+            if (!$temAcesso && $usaVinculoProfessorDisciplina) {
+                $temAcesso = DB::table('grade_curricular as gc')
+                    ->join('professor_disciplina as pd', 'pd.disciplina_id', '=', 'gc.disciplina_id')
+                    ->where('gc.turma_id', $turma->id)
+                    ->where('pd.professor_id', $professorId)
+                    ->exists();
+            }
+
+            if (!$temAcesso) {
+                return response()->json([
+                    'message' => 'Voce nao possui vinculo com essa turma.',
+                ], 403);
+            }
+        }
+
         $periodos = PeriodoAvaliacao::query()
             ->where('ano_letivo_id', $turma->ano_letivo_id)
             ->orderBy('ordem')
@@ -80,17 +140,59 @@ class NotaController extends Controller
 
         $anoLetivo = AnoLetivo::find($turma->ano_letivo_id);
         $periodoAtivo = $anoLetivo?->periodoAtivo();
-        if (!Schema::hasTable('curso_disciplina')) {
-            return response()->json([
-                'message' => 'Estrutura de vinculo curso-disciplina nao encontrada.',
-                'hint' => 'Execute o script banco-de-dados/008_create_curso_disciplina_table.sql.',
-            ], 422);
-        }
+        $usaVinculoCurso = Schema::hasTable('curso_disciplina');
 
         $cursoIdTurma = $this->cursoIdDaTurma($turma);
-        $disciplinasVinculadas = $turma->disciplinas
-            ->filter(fn($d) => $cursoIdTurma ? $this->disciplinaPertenceAoCurso((int) $d->id, (int) $cursoIdTurma) : false)
-            ->values();
+        $disciplinasVinculadas = $turma->disciplinas->values();
+        if ($usaVinculoCurso && $cursoIdTurma) {
+            $disciplinasVinculadas = $disciplinasVinculadas
+                ->filter(fn($d) => $this->disciplinaPertenceAoCurso((int) $d->id, (int) $cursoIdTurma))
+                ->values();
+        }
+
+        if ($isProfessor && $professorId) {
+            $disciplinasPorVinculo = DB::table('professor_turma_disciplina')
+                ->where('professor_id', $professorId)
+                ->where('turma_id', $turma->id)
+                ->pluck('disciplina_id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+
+            $disciplinasPorHorario = DB::table('horarios')
+                ->where('professor_id', $professorId)
+                ->where('turma_id', $turma->id)
+                ->pluck('disciplina_id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+
+            $disciplinasPorCadastro = [];
+            if (Schema::hasTable('professor_disciplina')) {
+                $disciplinasPorCadastro = DB::table('professor_disciplina')
+                    ->where('professor_id', $professorId)
+                    ->pluck('disciplina_id')
+                    ->map(fn($id) => (int) $id)
+                    ->all();
+            }
+
+            $idsPermitidos = array_values(array_unique(array_merge(
+                $disciplinasPorVinculo,
+                $disciplinasPorHorario,
+                $disciplinasPorCadastro
+            )));
+
+            $idsGradeTurma = $turma->disciplinas->pluck('id')->map(fn($id) => (int) $id)->all();
+            $idsParaRetorno = $idsPermitidos;
+            if (!empty($idsGradeTurma)) {
+                $intersecao = array_values(array_intersect($idsPermitidos, $idsGradeTurma));
+                if (!empty($intersecao)) {
+                    $idsParaRetorno = $intersecao;
+                }
+            }
+
+            $disciplinasVinculadas = !empty($idsParaRetorno)
+                ? Disciplina::query()->whereIn('id', $idsParaRetorno)->orderBy('nome')->get()
+                : collect();
+        }
 
         return response()->json([
             'turmas' => $turmas,
@@ -187,20 +289,8 @@ class NotaController extends Controller
             ]);
         }
 
-        if (!Schema::hasTable('curso_disciplina')) {
-            return response()->json([
-                'message' => 'Estrutura de vinculo curso-disciplina nao encontrada.',
-                'hint' => 'Execute o script banco-de-dados/008_create_curso_disciplina_table.sql.',
-            ], 422);
-        }
-
-
-        $cursoId = $this->cursoIdDaTurma($turma);
-        if (!$cursoId || !$this->disciplinaPertenceAoCurso((int) $data['disciplina_id'], (int) $cursoId)) {
-            throw ValidationException::withMessages([
-                'disciplina_id' => ['A disciplina selecionada nao esta vinculada ao curso da turma.'],
-            ]);
-        }
+        // O lancamento usa como fonte de verdade a grade da turma.
+        // Nao bloqueia por curso_disciplina para evitar erro por cadastro incompleto.
 
         if ((int) $periodo->ano_letivo_id !== (int) $turma->ano_letivo_id) {
             throw ValidationException::withMessages([

@@ -13,14 +13,18 @@ class User extends Authenticatable
 
     protected $table = 'usuarios';
 
+    const CREATED_AT = 'criado_em';
+    const UPDATED_AT = 'atualizado_em';
+
     protected $fillable = [
-        'nome', 'email', 'senha', 'perfil_id', 'ativo',
+        'nome', 'email', 'senha', 'perfil_id', 'ativo', 'trocar_senha', 'matricula_interna', 'foto',
     ];
 
     protected $hidden = ['senha', 'remember_token'];
 
     protected $casts = [
-        'ativo' => 'boolean',
+        'ativo'        => 'boolean',
+        'trocar_senha' => 'boolean',
         'ultimo_login' => 'datetime',
     ];
 

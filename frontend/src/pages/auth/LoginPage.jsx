@@ -38,8 +38,19 @@ const PORTAIS = [
    ROOT
 ══════════════════════════════════════════════════════════ */
 export default function LoginPage() {
-  const [tela, setTela]     = useState('portais')
+  const [tela, setTela] = useState('portais')
   const [portal, setPortal] = useState(null)
+  const [portalCarregando, setPortalCarregando] = useState(null)
+
+  const selecionarPortal = (p) => {
+    if (portalCarregando) return
+    setPortalCarregando(p)
+    setTimeout(() => {
+      setPortal(p)
+      setTela('login')
+      setPortalCarregando(null)
+    }, 700)
+  }
 
   if (tela === 'login' && portal)
     return <FormLogin portal={portal} onVoltar={() => setTela('portais')} />
@@ -48,8 +59,8 @@ export default function LoginPage() {
 
   return (
     <SelecaoPortal
-      onSelect={p => { setPortal(p); setTela('login') }}
-      onAdmin={() => setTela('admin')}
+      onSelect={selecionarPortal}
+      portalCarregando={portalCarregando}
     />
   )
 }
@@ -57,7 +68,7 @@ export default function LoginPage() {
 /* ══════════════════════════════════════════════════════════
    TELA 1 — Seleção de portais (estilo Exitus)
 ══════════════════════════════════════════════════════════ */
-function SelecaoPortal({ onSelect, onAdmin }) {
+function SelecaoPortal({ onSelect, portalCarregando }) {
   return (
     <div style={{
       minHeight: '100vh',
@@ -66,13 +77,11 @@ function SelecaoPortal({ onSelect, onAdmin }) {
       alignItems: 'center', justifyContent: 'center',
       padding: '40px 24px', fontFamily: FONT,
     }}>
-      {/* Logo */}
       <img src={logoLarge} alt="Babel" style={{
         height: 90, width: 'auto', objectFit: 'contain',
         filter: 'brightness(0) invert(1)', marginBottom: 28,
       }}/>
 
-      {/* Subtítulo */}
       <p style={{
         fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,.75)',
         letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 40,
@@ -81,66 +90,76 @@ function SelecaoPortal({ onSelect, onAdmin }) {
         Bem-vindo ao Babel, escolha seu tipo de acesso:
       </p>
 
-      {/* Cards — 3 colunas */}
       <div style={{
         display: 'flex', gap: 28, flexWrap: 'wrap',
         justifyContent: 'center', marginBottom: 40, maxWidth: 1080,
       }}>
         {PORTAIS.map(p => (
-          <PortalCard key={p.key} portal={p} onSelect={() => onSelect(p)} />
+          <PortalCard
+            key={p.key}
+            portal={p}
+            onSelect={() => onSelect(p)}
+            disabled={!!portalCarregando}
+            ativo={portalCarregando?.key === p.key}
+          />
         ))}
       </div>
 
-      {/* Link criar admin */}
-      <button onClick={onAdmin} style={{
-        background: 'none', border: `1px solid ${C.border}`,
-        borderRadius: 8, padding: '8px 20px',
-        color: 'rgba(255,255,255,.45)', fontSize: 12.5, fontWeight: 500,
-        cursor: 'pointer', fontFamily: FONT,
-        transition: 'all .2s', marginBottom: 28,
-      }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = C.teal; e.currentTarget.style.color = C.teal }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}
-      >
-        Criar conta de administrador
-      </button>
-
-      {/* Copyright */}
       <p style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,.3)' }}>
-        Copyright © {new Date().getFullYear()} | Todos os Direitos Reservados
+        Copyright (c) {new Date().getFullYear()} | Todos os Direitos Reservados
       </p>
+
+      {portalCarregando && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          background: 'rgba(1,42,74,.65)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          color: '#fff',
+        }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%',
+            border: '3px solid rgba(255,255,255,.28)',
+            borderTopColor: C.teal,
+            animation: 'spin .7s linear infinite',
+            marginBottom: 14,
+          }} />
+          <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.3px' }}>
+            Carregando portal {portalCarregando.label}...
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-/* ── Card de Portal ─────────────────────────────────────── */
-function PortalCard({ portal, onSelect }) {
+function PortalCard({ portal, onSelect, disabled, ativo }) {
   const [hov, setHov] = useState(false)
   const { Illu } = portal
+  const cardHover = hov && !disabled
 
   return (
     <div
-      onMouseEnter={() => setHov(true)}
+      onMouseEnter={() => !disabled && setHov(true)}
       onMouseLeave={() => setHov(false)}
-      onClick={onSelect}
+      onClick={() => !disabled && onSelect()}
       style={{
         width: 300, minHeight: 370,
-        background: hov ? C.cardHov : C.card,
+        background: cardHover ? C.cardHov : C.card,
         backdropFilter: 'blur(10px)',
         borderRadius: 14,
-        border: `1px solid ${hov ? 'rgba(0,216,195,.35)' : 'rgba(255,255,255,.15)'}`,
+        border: `1px solid ${ativo ? 'rgba(0,216,195,.65)' : cardHover ? 'rgba(0,216,195,.35)' : 'rgba(255,255,255,.15)'}`,
         padding: '22px 20px 24px',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
         transition: 'all .3s ease',
-        transform: hov ? 'translateY(-6px)' : 'none',
-        boxShadow: hov
-          ? '0 16px 40px rgba(0,0,0,.25)'
-          : '0 4px 16px rgba(0,0,0,.15)',
+        transform: cardHover ? 'translateY(-6px)' : 'none',
+        opacity: disabled && !ativo ? .55 : 1,
+        boxShadow: cardHover || ativo ? '0 16px 40px rgba(0,0,0,.25)' : '0 4px 16px rgba(0,0,0,.15)',
         position: 'relative',
       }}
     >
-      {/* Label */}
       <div style={{
         fontSize: 13, fontWeight: 700, letterSpacing: '1.5px',
         color: C.textCard, textTransform: 'uppercase',
@@ -149,56 +168,52 @@ function PortalCard({ portal, onSelect }) {
         {portal.label}
       </div>
 
-      {/* Linha teal abaixo do label */}
-      <div style={{
-        width: 70, height: 3, borderRadius: 99,
-        background: C.teal, marginBottom: 22,
-      }}/>
+      <div style={{ width: 70, height: 3, borderRadius: 99, background: C.teal, marginBottom: 22 }}/>
 
-      {/* Ilustração */}
       <div style={{
         flex: 1, width: '100%',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 18,
       }}>
         {portal.img ? (
-          <img src={portal.img} alt="ilustração" style={{ maxWidth: '90%', height: 200, objectFit: 'contain' }} />
+          <img src={portal.img} alt="ilustracao" style={{ maxWidth: '90%', height: 200, objectFit: 'contain' }} />
         ) : (
           <Illu size={180} />
         )}
       </div>
 
-      {/* Botão Acessar */}
       <button
-        onClick={e => { e.stopPropagation(); onSelect() }}
+        onClick={e => {
+          e.stopPropagation()
+          if (!disabled) onSelect()
+        }}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           padding: '10px 28px', borderRadius: 8,
-          background: hov ? C.tealHov : C.teal,
+          background: cardHover ? C.tealHov : C.teal,
           border: 'none', color: C.dark,
-          fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          fontSize: 13, fontWeight: 700, cursor: disabled ? 'default' : 'pointer',
           fontFamily: FONT,
           transition: 'all .2s',
-          boxShadow: hov ? '0 4px 14px rgba(0,216,195,.35)' : 'none',
+          boxShadow: cardHover ? '0 4px 14px rgba(0,216,195,.35)' : 'none',
+          opacity: disabled && !ativo ? .6 : 1,
         }}
+        disabled={disabled}
       >
-        <IcoLogin /> Acessar
+        {ativo ? <><Spinner /> Abrindo...</> : <><IcoLogin /> Acessar</>}
       </button>
     </div>
   )
 }
 
-/* ══════════════════════════════════════════════════════════
-   TELA 2 — Login com formulário
-══════════════════════════════════════════════════════════ */
 function FormLogin({ portal, onVoltar }) {
-  const [email, setEmail]     = useState('')
-  const [senha, setSenha]     = useState('')
-  const [show, setShow]       = useState(false)
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const { login }             = useAuth()
-  const { Illu }              = portal
+  const [error, setError] = useState('')
+  const { login } = useAuth()
+  const { Illu } = portal
 
   const submit = async e => {
     e.preventDefault()
@@ -208,17 +223,17 @@ function FormLogin({ portal, onVoltar }) {
       await login(email, senha)
     } catch (err) {
       const status = err.response?.status
-      const msg    = err.response?.data?.message
+      const msg = err.response?.data?.message
       const errors = err.response?.data?.errors
       if (errors) {
         const first = Object.values(errors).flat()[0]
-        setError(first || 'Credenciais inválidas.')
+        setError(first || 'Credenciais invalidas.')
       } else if (status === 401 || status === 422) {
-        setError('E-mail ou senha inválidos.')
+        setError('E-mail ou senha invalidos.')
       } else if (status === 403) {
-        setError('Usuário inativo. Contate o administrador.')
+        setError('Usuario inativo. Contate o administrador.')
       } else if (!err.response) {
-        setError('Sem conexão com o servidor. Verifique se o backend está rodando.')
+        setError('Sem conexao com o servidor. Verifique se o backend esta rodando.')
       } else {
         setError(msg || 'Erro inesperado. Tente novamente.')
       }
@@ -232,118 +247,142 @@ function FormLogin({ portal, onVoltar }) {
       minHeight: '100vh',
       background: `linear-gradient(170deg, ${C.bg} 0%, ${C.bgLight} 50%, ${C.bg} 100%)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '40px 24px', fontFamily: FONT,
+      padding: '30px 20px', fontFamily: FONT,
     }}>
       <div style={{
-        background: C.white, borderRadius: 18,
-        width: '100%', maxWidth: 440,
-        padding: '40px 36px',
-        boxShadow: '0 20px 60px rgba(0,0,0,.25)',
-        border: '1px solid rgba(255,255,255,.15)',
+        width: '100%', maxWidth: 1040,
+        background: C.white,
+        borderRadius: 20,
+        boxShadow: '0 22px 64px rgba(0,0,0,.28)',
+        border: '1px solid rgba(255,255,255,.2)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexWrap: 'wrap',
       }}>
-        {/* Logo pequena */}
-        <div style={{ textAlign: 'center', marginBottom: 8 }}>
-          <img src={logoLarge} alt="" style={{ height: 36, objectFit: 'contain' }}/>
-        </div>
-
-        {/* Tipo do portal */}
-        <div style={{ textAlign: 'center', marginBottom: 6 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '2px',
-            color: C.textMuted, textTransform: 'uppercase',
-          }}>
-            {portal.label}
-          </span>
-          <div style={{ width: 50, height: 3, borderRadius: 99, background: C.teal, margin: '6px auto 0' }}/>
-        </div>
-
-        {/* Ilustração pequena */}
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '18px 0 22px' }}>
-          <Illu size={120} />
-        </div>
-
-        <h2 style={{
-          fontSize: 18, fontWeight: 700, color: C.dark,
-          textAlign: 'center', marginBottom: 4,
+        <div style={{
+          flex: '1 1 360px', minHeight: 520,
+          background: 'linear-gradient(165deg, #0b2f56 0%, #0f3e6d 60%, #15518a 100%)',
+          color: '#fff',
+          padding: '34px 30px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         }}>
-          Bem-vindo de volta
-        </h2>
-        <p style={{
-          fontSize: 13, color: C.textMuted, textAlign: 'center', marginBottom: 22,
-        }}>
-          Entre com suas credenciais
-        </p>
-
-        {/* Erro */}
-        {error && (
-          <div style={{
-            padding: '10px 14px', background: '#fef2f2',
-            border: '1px solid #fecaca', borderRadius: 8,
-            fontSize: 13, color: C.danger, marginBottom: 16,
-            display: 'flex', alignItems: 'flex-start', gap: 8,
-          }}>
-            <span style={{ flexShrink: 0 }}>⚠</span>
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <InputField label="E-mail" value={email} onChange={e => setEmail(e.target.value)} type="email" ph="seu@email.com" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <label style={labelStyle}>Senha</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={show ? 'text' : 'password'} required
-                value={senha} onChange={e => setSenha(e.target.value)}
-                placeholder="••••••••" style={{ ...inputStyle, paddingRight: 42 }}
-              />
-              <button type="button" onClick={() => setShow(s => !s)} style={{
-                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: C.textMuted, display: 'flex', padding: 2,
-              }}>
-                {show ? <EyeOff /> : <Eye />}
-              </button>
+          <div>
+            <img src={logoLarge} alt="" style={{ height: 34, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}/>
+            <div style={{ marginTop: 24, fontSize: 12, letterSpacing: '1.8px', textTransform: 'uppercase', opacity: .75 }}>
+              Portal {portal.label}
             </div>
+            <h2 style={{ marginTop: 10, fontSize: 28, lineHeight: 1.2, fontWeight: 800 }}>
+              Acesse sua conta Babel
+            </h2>
+            <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.6, opacity: .88 }}>
+              Use suas credenciais para entrar com seguranca no sistema escolar.
+            </p>
           </div>
 
-          {/* Botão entrar */}
-          <button type="submit" disabled={loading} style={{
-            padding: '12px', borderRadius: 8, border: 'none',
-            background: loading ? '#99f6e4' : C.teal,
-            color: C.dark, fontSize: 14, fontWeight: 700,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontFamily: FONT,
-            transition: 'all .2s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = C.tealHov }}
-            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = C.teal }}
-          >
-            {loading ? <><Spinner /> Entrando...</> : <><IcoLogin /> Entrar</>}
-          </button>
-        </form>
+          <div style={{
+            background: 'rgba(255,255,255,.08)',
+            border: '1px solid rgba(255,255,255,.12)',
+            borderRadius: 14,
+            padding: '20px 16px',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+          }}>
+            {portal.img ? (
+              <img src={portal.img} alt="Ilustracao do portal" style={{ width: '100%', maxWidth: 340, maxHeight: 260, objectFit: 'contain' }} />
+            ) : (
+              <Illu size={220} />
+            )}
+          </div>
+        </div>
 
-        {/* Voltar */}
-        <button onClick={onVoltar} style={{
-          marginTop: 18, width: '100%', background: 'none', border: 'none',
-          cursor: 'pointer', color: C.textMuted,
-          fontSize: 13, fontFamily: FONT, transition: 'color .2s',
-          textAlign: 'center',
-        }}
-          onMouseEnter={e => e.currentTarget.style.color = C.dark}
-          onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
-        >
-          ← Voltar à seleção de portais
-        </button>
+        <div style={{
+          flex: '1 1 360px',
+          minHeight: 520,
+          padding: '42px 34px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}>
+          <div style={{ marginBottom: 18 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '2px',
+              color: C.textMuted, textTransform: 'uppercase',
+            }}>
+              {portal.label}
+            </div>
+            <h3 style={{ fontSize: 30, color: C.dark, lineHeight: 1.1, marginTop: 8, fontWeight: 800 }}>
+              Bem-vindo de volta
+            </h3>
+            <p style={{ fontSize: 14, color: C.textMuted, marginTop: 8 }}>
+              Entre com suas credenciais
+            </p>
+          </div>
+
+          {error && (
+            <div style={{
+              padding: '10px 14px', background: '#fef2f2',
+              border: '1px solid #fecaca', borderRadius: 8,
+              fontSize: 13, color: C.danger, marginBottom: 16,
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+            }}>
+              <span style={{ flexShrink: 0 }}>!</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <InputField label="E-mail" value={email} onChange={e => setEmail(e.target.value)} type="email" ph="seu@email.com" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <label style={labelStyle}>Senha</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={show ? 'text' : 'password'} required
+                  value={senha} onChange={e => setSenha(e.target.value)}
+                  placeholder="********" style={{ ...inputStyle, paddingRight: 42 }}
+                />
+                <button type="button" onClick={() => setShow(s => !s)} style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: C.textMuted, display: 'flex', padding: 2,
+                }}>
+                  {show ? <EyeOff /> : <Eye />}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} style={{
+              marginTop: 2,
+              padding: '12px', borderRadius: 8, border: 'none',
+              background: loading ? '#99f6e4' : C.teal,
+              color: C.dark, fontSize: 16, fontWeight: 800,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: FONT,
+              transition: 'all .2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = C.tealHov }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.background = C.teal }}
+            >
+              {loading ? <><Spinner /> Entrando...</> : <><IcoLogin /> Entrar</>}
+            </button>
+          </form>
+
+          <button onClick={onVoltar} style={{
+            marginTop: 18, width: '100%', background: 'none', border: 'none',
+            cursor: 'pointer', color: C.textMuted,
+            fontSize: 13, fontFamily: FONT, transition: 'color .2s',
+            textAlign: 'center',
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = C.dark}
+            onMouseLeave={e => e.currentTarget.style.color = C.textMuted}
+          >
+            {'<- Voltar a selecao de portais'}
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ══════════════════════════════════════════════════════════
-   TELA 3 — Criar admin
-══════════════════════════════════════════════════════════ */
 function FormAdmin({ onVoltar }) {
   const [form, setForm]       = useState({ nome: '', email: '', senha: '' })
   const [loading, setLoading] = useState(false)

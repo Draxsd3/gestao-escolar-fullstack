@@ -9,10 +9,37 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private function fotoUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+        return url(Storage::disk('public')->url($path));
+    }
+
+    private function payloadUsuario(User $user): array
+    {
+        $data = [
+            'id'           => $user->id,
+            'nome'         => $user->nome,
+            'email'        => $user->email,
+            'perfil'       => $user->perfil->nome,
+            'ativo'        => $user->ativo,
+            'trocar_senha' => $user->trocar_senha ?? false,
+            'foto'         => $user->foto,
+            'foto_url'     => $this->fotoUrl($user->foto),
+        ];
+
+        if ($user->professor) {
+            $data['permissoes'] = $user->professor->permissoes ?? [];
+        }
+
+        return $data;
+    }
+
     public function login(Request $request): JsonResponse
     {
         $request->validate([
@@ -31,20 +58,18 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->load('professor');
         $user->update(['ultimo_login' => now()]);
         $user->tokens()->delete();
         $token = $user->createToken('babel-app', ['*'], now()->addHours(8))->plainTextToken;
 
         Auditoria::registrar('login', 'usuarios', $user->id, null, ['email' => $user->email]);
 
+        $usuarioData = $this->payloadUsuario($user);
+
         return response()->json([
             'token'   => $token,
-            'usuario' => [
-                'id'     => $user->id,
-                'nome'   => $user->nome,
-                'email'  => $user->email,
-                'perfil' => $user->perfil->nome,
-            ],
+            'usuario' => $usuarioData,
         ]);
     }
 
@@ -91,13 +116,45 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->load('perfil');
+        $user = $request->user()->load('perfil', 'professor');
+        return response()->json($this->payloadUsuario($user));
+    }
+
+    public function atualizarPerfil(Request $request): JsonResponse
+    {
+        $user = $request->user()->load('perfil', 'professor');
+
+        $data = $request->validate([
+            'nome'        => ['required', 'string', 'max:150'],
+            'email'       => ['required', 'email', "unique:usuarios,email,{$user->id}"],
+            'foto'        => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remover_foto'=> ['nullable', 'boolean'],
+        ]);
+
+        $payload = [
+            'nome' => $data['nome'],
+            'email' => $data['email'],
+        ];
+
+        if ($request->boolean('remover_foto')) {
+            if ($user->foto) {
+                Storage::disk('public')->delete($user->foto);
+            }
+            $payload['foto'] = null;
+        }
+
+        if ($request->hasFile('foto')) {
+            if ($user->foto) {
+                Storage::disk('public')->delete($user->foto);
+            }
+            $payload['foto'] = $request->file('foto')->store('usuarios/perfis', 'public');
+        }
+
+        $user->update($payload);
+
         return response()->json([
-            'id'     => $user->id,
-            'nome'   => $user->nome,
-            'email'  => $user->email,
-            'perfil' => $user->perfil->nome,
-            'ativo'  => $user->ativo,
+            'message' => 'Perfil atualizado com sucesso.',
+            'usuario' => $this->payloadUsuario($user->fresh()->load('perfil', 'professor')),
         ]);
     }
 

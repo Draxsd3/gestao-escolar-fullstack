@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { Button, Badge, Loading, EmptyState, Modal, Alert } from '../../components/ui'
+import { ICON_BUTTON_STYLE, EditIcon, ViewIcon, PowerIcon, DeleteIcon } from '../../components/ui/actionIcons'
 
 export default function Planos() {
   const [items, setItems]     = useState([])
@@ -51,7 +52,7 @@ export default function Planos() {
                     <td style={{fontWeight:600,color:'var(--text-primary)'}}>{item.nome||item.ano||'—'}</td>
                     <td style={{color:'var(--text-muted)',fontSize:13}}>{item.descricao||item.observacao||'—'}</td>
                     <td><Badge variant={item.ativo!==false?'success':'secondary'}>{item.ativo!==false?'Ativo':'Inativo'}</Badge></td>
-                    <td><Button variant="ghost" size="sm" title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button></td>
+                    <td><Button variant="ghost" size="sm" title="Editar" style={ICON_BUTTON_STYLE}><EditIcon /></Button></td>
                   </tr>
                 ))}
               </tbody>

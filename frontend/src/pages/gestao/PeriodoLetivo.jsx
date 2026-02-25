@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { useAnoLetivo } from '../../context/AnoLetivoContext'
 import { Button, Badge, Loading, EmptyState, Modal, Alert } from '../../components/ui'
+import { ICON_BUTTON_STYLE, EditIcon, ViewIcon, PowerIcon, DeleteIcon } from '../../components/ui/actionIcons'
 
 const STATUS_LABEL = {
   configurando: { label: 'Configurando', color: '#f59e0b' },
@@ -65,7 +66,11 @@ export default function PeriodoLetivo() {
     try {
       await api.post(`/periodos-avaliacao/${modalFechar.id}/fechar`, {}, { skipConfirm: true })
       setModalFechar(null); fetchData(); recarregar()
-    } catch (err) { setError(err.response?.data?.message || 'Erro ao fechar período.') }
+    } catch (err) {
+      const payload = err.response?.data || {}
+      const detalhe = [payload.message, payload.hint].filter(Boolean).join(' ')
+      setError(detalhe || 'Erro ao fechar período.')
+    }
     finally { setSaving(false) }
   }
 
@@ -164,7 +169,7 @@ export default function PeriodoLetivo() {
                             </td>
                             <td style={{ textAlign: 'right' }}>
                               {!p.encerrado && (
-                                <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
+                                <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Editar" style={ICON_BUTTON_STYLE}><EditIcon /></Button>
                               )}
                               {p.encerrado && (
                                 <Button variant="ghost" size="sm" onClick={() => verBoletins(p, ano.id)} title="Ver Boletins" style={{ fontSize: 12 }}>📋 Boletins</Button>

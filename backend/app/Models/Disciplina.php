@@ -15,4 +15,9 @@ class Disciplina extends Model
     {
         return $this->belongsToMany(NivelEnsino::class, 'curso_disciplina', 'disciplina_id', 'curso_id');
     }
+
+    public function professores()
+    {
+        return $this->belongsToMany(Professor::class, 'professor_disciplina', 'disciplina_id', 'professor_id');
+    }
 }

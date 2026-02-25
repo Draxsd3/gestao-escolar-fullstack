@@ -11,7 +11,7 @@ export default function FinanceiroDashboard() {
       recebido_mes: d.total_recebido ?? d.recebido_mes ?? 0,
       a_receber: d.total_a_receber ?? d.a_receber ?? 0,
       inadimplente: d.total_inadimplencia ?? d.inadimplente ?? 0,
-      total_contratos: d.qtd_inadimplentes ?? d.total_contratos ?? 0,
+      total_contratos: d.total_contratos ?? 0,
       ...d,
     })
   }).catch(()=>setData({})).finally(()=>setLoading(false)) }, [])

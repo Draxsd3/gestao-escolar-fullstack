@@ -7,6 +7,12 @@ import Dashboard from './pages/dashboard/Dashboard'
 import AlunosLista from './pages/alunos/AlunosLista'
 import AlunoDetalhe from './pages/alunos/AlunoDetalhe'
 import AlunoForm from './pages/alunos/AlunoForm'
+import ProfessoresLista from './pages/professores/ProfessoresLista'
+import ProfessorWizard from './pages/professores/ProfessorWizard'
+import TarefasProfessor from './pages/professores/TarefasProfessor'
+import ProfessorPortal from './pages/professores/ProfessorPortal'
+import BoletimAluno from './pages/aluno/BoletimAluno'
+import TarefasAluno from './pages/aluno/TarefasAluno'
 import TurmasLista from './pages/turmas/TurmasLista'
 import TurmaDetalhe from './pages/turmas/TurmaDetalhe'
 import MatriculasLista from './pages/turmas/MatriculasLista'
@@ -20,6 +26,7 @@ import PlanosFinanceiro from './pages/financeiro/Planos'
 import ComunicadosLista from './pages/comunicacao/ComunicadosLista'
 import MensagensLista from './pages/comunicacao/MensagensLista'
 import GestaoUsuarios from './pages/admin/GestaoUsuarios'
+import PerfilPage from './pages/perfil/PerfilPage'
 import GestaoGeral from './pages/gestao/GestaoGeral'
 import PeriodoLetivo from './pages/gestao/PeriodoLetivo'
 import Salas from './pages/gestao/Salas'
@@ -57,6 +64,14 @@ function AppRoutes() {
         <Route path="alunos/:id" element={<AlunoDetalhe />} />
         <Route path="alunos/:id/editar" element={<RotaProtegida perfis={['admin','secretaria']}><AlunoForm /></RotaProtegida>} />
 
+        <Route path="professores" element={<RotaProtegida perfis={['admin','secretaria','coordenacao']}><ProfessoresLista /></RotaProtegida>} />
+        <Route path="professores/novo" element={<RotaProtegida perfis={['admin','secretaria']}><ProfessorWizard /></RotaProtegida>} />
+        <Route path="professor/portal" element={<RotaProtegida perfis={['professor','admin']}><ProfessorPortal /></RotaProtegida>} />
+        <Route path="professor/tarefas" element={<RotaProtegida perfis={['professor','admin']}><TarefasProfessor /></RotaProtegida>} />
+
+        <Route path="aluno/boletim" element={<RotaProtegida perfis={['aluno']}><BoletimAluno /></RotaProtegida>} />
+        <Route path="aluno/tarefas" element={<RotaProtegida perfis={['aluno']}><TarefasAluno /></RotaProtegida>} />
+
         <Route path="turmas" element={<TurmasLista />} />
         <Route path="turmas/:id" element={<TurmaDetalhe />} />
 
@@ -72,6 +87,7 @@ function AppRoutes() {
 
         <Route path="comunicados" element={<ComunicadosLista />} />
         <Route path="mensagens" element={<MensagensLista />} />
+        <Route path="perfil" element={<PerfilPage />} />
 
         <Route path="admin/usuarios" element={<RotaProtegida perfis={['admin']}><GestaoUsuarios /></RotaProtegida>} />
 

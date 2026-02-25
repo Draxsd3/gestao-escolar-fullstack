@@ -137,6 +137,10 @@ export default function FrequenciaRelatorio() {
             <div className="stat-value" style={{ fontSize: 20 }}>{historico.resumo.total_aulas}</div>
           </Card>
           <Card>
+            <div className="stat-label">Aulas dadas (slots)</div>
+            <div className="stat-value" style={{ fontSize: 20 }}>{historico.resumo.total_aulas_lancadas ?? '-'}</div>
+          </Card>
+          <Card>
             <div className="stat-label">Registros</div>
             <div className="stat-value" style={{ fontSize: 20 }}>{historico.resumo.total_registros}</div>
           </Card>
@@ -158,8 +162,8 @@ export default function FrequenciaRelatorio() {
                   <th>Data</th>
                   {!historico?.turma && <th>Turma / Sala</th>}
                   <th>Disciplina</th>
-                  <th>Presentes</th>
-                  <th>Faltas</th>
+                  <th>Presencas (aulas)</th>
+                  <th>Faltas (aulas)</th>
                   <th>% Presenca</th>
                   <th>Detalhe</th>
                 </tr>
@@ -205,6 +209,7 @@ export default function FrequenciaRelatorio() {
                   <tr>
                     <th>Aluno</th>
                     <th>Status</th>
+                    <th>Frequencia</th>
                     <th>Justificativa</th>
                   </tr>
                 </thead>
@@ -213,9 +218,12 @@ export default function FrequenciaRelatorio() {
                     <tr key={`${aula.aula_id}-${registro.aluno_id}`}>
                       <td>{registro.aluno}</td>
                       <td>
-                        <Badge variant={registro.presente ? 'success' : 'danger'}>
-                          {registro.presente ? 'Presente' : 'Falta'}
+                        <Badge variant={registro.status === 'presente' ? 'success' : (registro.status === 'parcial' ? 'warning' : 'danger')}>
+                          {registro.status === 'presente' ? 'Presente' : (registro.status === 'parcial' ? 'Parcial' : 'Falta')}
                         </Badge>
+                      </td>
+                      <td style={{ fontFamily: 'var(--mono)' }}>
+                        {registro.presencas_aula ?? (registro.presente ? 1 : 0)}/{registro.numero_aulas ?? 1}
                       </td>
                       <td>{registro.justificativa || '-'}</td>
                     </tr>

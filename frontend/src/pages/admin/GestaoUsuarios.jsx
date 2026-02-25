@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import api from '../../services/api'
 import { Button, Badge, Loading, EmptyState, Pagination, Modal, Alert } from '../../components/ui'
+import { ICON_BUTTON_STYLE, EditIcon, ViewIcon, PowerIcon, DeleteIcon } from '../../components/ui/actionIcons'
 
 // ── Paleta por perfil ──────────────────────────────────────
 const PERFIL_META = {
@@ -264,7 +265,7 @@ export default function GestaoUsuarios() {
                         </td>
                         <td>
                           <div style={{ display:'flex', gap:5 }}>
-                            <Button variant="ghost" size="sm" onClick={() => abrirEditar(u)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
+                            <Button variant="ghost" size="sm" onClick={() => abrirEditar(u)} title="Editar" style={ICON_BUTTON_STYLE}><EditIcon /></Button>
                             <Button variant="ghost" size="sm" onClick={() => { setModalSenha(u); setNovaSenha('') }} title="Resetar senha">🔑</Button>
                           </div>
                         </td>

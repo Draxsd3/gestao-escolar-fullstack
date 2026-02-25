@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { Button, Badge, Loading, EmptyState, Modal, Alert } from '../../components/ui'
+import { ICON_BUTTON_STYLE, EditIcon, ViewIcon, PowerIcon, DeleteIcon } from '../../components/ui/actionIcons'
 
 const FORM_INITIAL = { curso_id: '', ano_letivo_id: '', nome: '', turno: 'manha', vagas: 35, sala: '', ativa: true }
 
@@ -205,12 +206,12 @@ export default function TurmasLista() {
                     <td>{t.sala || '-'}</td>
                     <td><Badge variant={t.ativa !== false ? 'success' : 'secondary'}>{t.ativa !== false ? 'Ativa' : 'Inativa'}</Badge></td>
                     <td style={{ display: 'flex', gap: 6 }}>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(t)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>{'\u270E'}</Button>
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/turmas/${t.id}`)} title="Ver" style={{ fontSize: 18, lineHeight: 1 }}>{'\u{1F441}'}</Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(t)} title="Editar" style={ICON_BUTTON_STYLE}><EditIcon /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/turmas/${t.id}`)} title="Ver" style={ICON_BUTTON_STYLE}><ViewIcon /></Button>
                       {t.ativa !== false && (
-                        <Button variant="ghost" size="sm" onClick={() => encerrarTurma(t)} title="Encerrar" style={{ fontSize: 18, lineHeight: 1 }}>{'\u23FB'}</Button>
+                        <Button variant="ghost" size="sm" onClick={() => encerrarTurma(t)} title="Encerrar" style={ICON_BUTTON_STYLE}><PowerIcon /></Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={() => excluirTurma(t)} title="Excluir" style={{ fontSize: 18, lineHeight: 1 }}>{'\u{1F5D1}'}</Button>
+                      <Button variant="ghost" size="sm" onClick={() => excluirTurma(t)} title="Excluir" style={ICON_BUTTON_STYLE}><DeleteIcon /></Button>
                     </td>
                   </tr>
                 ))}

@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Responsavel extends Model
 {
     protected $table = 'responsaveis';
+
+    const CREATED_AT = 'criado_em';
+    const UPDATED_AT = null;
+
     protected $fillable = ['usuario_id', 'nome', 'cpf', 'rg', 'email', 'telefone', 'telefone_alt', 'endereco', 'profissao', 'ativo'];
     protected $casts = ['endereco' => 'array', 'ativo' => 'boolean'];
 

@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { Alert, Badge, Button, EmptyState, Loading, Modal } from '../../components/ui'
+import { ICON_BUTTON_STYLE, EditIcon, ViewIcon, PowerIcon, DeleteIcon } from '../../components/ui/actionIcons'
 
-const FORM_INITIAL = { nome: '', codigo: '', carga_horaria_semanal: 2, ativa: true, curso_ids: [] }
+const FORM_INITIAL = { nome: '', codigo: '', carga_horaria_semanal: 2, ativa: true, curso_ids: [], professor_ids: [] }
 
 function formatApiError(err, fallback) {
   const data = err.response?.data || {}
@@ -22,20 +23,24 @@ export default function Disciplinas() {
   const [form, setForm] = useState(FORM_INITIAL)
   const [editItem, setEditItem] = useState(null)
   const [cursos, setCursos] = useState([])
+  const [professores, setProfessores] = useState([])
   const navigate = useNavigate()
 
   const fetch = async () => {
     setLoading(true)
     try {
-      const [disciplinasRes, cursosRes] = await Promise.all([
+      const [disciplinasRes, cursosRes, professoresRes] = await Promise.all([
         api.get('/disciplinas'),
         api.get('/cursos').catch(() => ({ data: [] })),
+        api.get('/professores-turma').catch(() => ({ data: [] })),
       ])
       setItems(disciplinasRes.data.data || disciplinasRes.data || [])
       setCursos(cursosRes.data.data || cursosRes.data || [])
+      setProfessores(professoresRes.data.data || professoresRes.data || [])
     } catch {
       setItems([])
       setCursos([])
+      setProfessores([])
     } finally {
       setLoading(false)
     }
@@ -70,6 +75,7 @@ export default function Disciplinas() {
         codigo: form.codigo || null,
         carga_horaria_semanal: Number(form.carga_horaria_semanal || 2),
         curso_ids: form.curso_ids.map(Number),
+        professor_ids: (form.professor_ids || []).map(Number),
       })
       onCloseNew()
       fetch()
@@ -88,6 +94,7 @@ export default function Disciplinas() {
       carga_horaria_semanal: item.carga_horaria_semanal || 2,
       ativa: item.ativa !== false,
       curso_ids: (item.curso_ids || item.cursos?.map((c) => c.id) || []).map(Number),
+      professor_ids: (item.professor_ids || item.professores?.map((p) => p.id) || []).map(Number),
     })
     setError('')
     setModalEdit(true)
@@ -109,6 +116,7 @@ export default function Disciplinas() {
         carga_horaria_semanal: Number(form.carga_horaria_semanal || 2),
         ativa: !!form.ativa,
         curso_ids: form.curso_ids.map(Number),
+        professor_ids: (form.professor_ids || []).map(Number),
       })
       onCloseEdit()
       fetch()
@@ -139,6 +147,16 @@ export default function Disciplinas() {
     })
   }
 
+  const toggleProfessor = (professorId) => {
+    setForm((prev) => {
+      const id = Number(professorId)
+      const set = new Set((prev.professor_ids || []).map(Number))
+      if (set.has(id)) set.delete(id)
+      else set.add(id)
+      return { ...prev, professor_ids: Array.from(set) }
+    })
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -159,7 +177,7 @@ export default function Disciplinas() {
         ) : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>#</th><th>Nome</th><th>Codigo</th><th>Carga</th><th>Cursos</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>#</th><th>Nome</th><th>Codigo</th><th>Carga</th><th>Cursos</th><th>Professores</th><th>Status</th><th></th></tr></thead>
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id}>
@@ -172,10 +190,15 @@ export default function Disciplinas() {
                         ? item.cursos.map((c) => c.nome).join(', ')
                         : '-'}
                     </td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                      {(item.professores || []).length
+                        ? item.professores.map((p) => p.nome).join(', ')
+                        : '-'}
+                    </td>
                     <td><Badge variant={item.ativo !== false ? 'success' : 'secondary'}>{item.ativo !== false ? 'Ativo' : 'Inativo'}</Badge></td>
                     <td style={{ display: 'flex', gap: 6 }}>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(item)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
-                      <Button variant="ghost" size="sm" onClick={() => removeItem(item)} title="Excluir" style={{ fontSize: 18, lineHeight: 1 }}>🗑</Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(item)} title="Editar" style={ICON_BUTTON_STYLE}><EditIcon /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeItem(item)} title="Excluir" style={ICON_BUTTON_STYLE}><DeleteIcon /></Button>
                     </td>
                   </tr>
                 ))}
@@ -215,6 +238,24 @@ export default function Disciplinas() {
               <small style={{ color: 'var(--danger)' }}>Selecione pelo menos um curso.</small>
             )}
           </div>
+          <div className="form-group">
+            <label className="form-label">Professores da disciplina</label>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {professores.map((prof) => (
+                <label key={prof.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)' }}>
+                  <input
+                    type="checkbox"
+                    checked={(form.professor_ids || []).map(Number).includes(Number(prof.id))}
+                    onChange={() => toggleProfessor(prof.id)}
+                  />
+                  {prof.nome}
+                </label>
+              ))}
+              {professores.length === 0 && (
+                <small style={{ color: 'var(--text-muted)' }}>Nenhum professor ativo encontrado.</small>
+              )}
+            </div>
+          </div>
         </form>
       </Modal>
 
@@ -247,6 +288,24 @@ export default function Disciplinas() {
             {(!form.curso_ids || form.curso_ids.length === 0) && (
               <small style={{ color: 'var(--danger)' }}>Selecione pelo menos um curso.</small>
             )}
+          </div>
+          <div className="form-group">
+            <label className="form-label">Professores da disciplina</label>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {professores.map((prof) => (
+                <label key={prof.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-primary)' }}>
+                  <input
+                    type="checkbox"
+                    checked={(form.professor_ids || []).map(Number).includes(Number(prof.id))}
+                    onChange={() => toggleProfessor(prof.id)}
+                  />
+                  {prof.nome}
+                </label>
+              ))}
+              {professores.length === 0 && (
+                <small style={{ color: 'var(--text-muted)' }}>Nenhum professor ativo encontrado.</small>
+              )}
+            </div>
           </div>
           <div className="form-group"><label className="form-label">Status</label>
             <select className="form-control" value={form.ativa ? '1' : '0'} onChange={(e) => setForm((f) => ({ ...f, ativa: e.target.value === '1' }))}>

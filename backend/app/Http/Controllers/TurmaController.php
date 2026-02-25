@@ -3,12 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\Turma;
-use App\Models\{Horario, Professor, Serie};
+use App\Models\{Horario, Professor, Serie, ProfessorTurmaDisciplina};
 use Illuminate\Http\{Request, JsonResponse};
 use Illuminate\Support\Facades\{DB, Schema};
 
 class TurmaController extends Controller
 {
+    private function sincronizarVinculoProfessorDisciplina(Turma $turma, int $professorId, int $disciplinaId): void
+    {
+        ProfessorTurmaDisciplina::updateOrCreate(
+            [
+                'professor_id' => $professorId,
+                'turma_id' => $turma->id,
+                'disciplina_id' => $disciplinaId,
+            ],
+            [
+                'ano_letivo_id' => $turma->ano_letivo_id,
+            ]
+        );
+    }
+
     private function cursoIdDaTurma(Turma $turma): ?int
     {
         return $turma->serie()->value('nivel_id');
@@ -241,6 +255,12 @@ class TurmaController extends Controller
         }
 
         $horario = $turma->horarios()->create($data);
+        $this->sincronizarVinculoProfessorDisciplina(
+            $turma,
+            (int) $data['professor_id'],
+            (int) $data['disciplina_id']
+        );
+
         return response()->json($horario->load(['disciplina', 'professor.usuario']), 201);
     }
 
@@ -271,6 +291,13 @@ class TurmaController extends Controller
 
         $horario->fill($data);
         $horario->save();
+
+        $this->sincronizarVinculoProfessorDisciplina(
+            $turma,
+            (int) $horario->professor_id,
+            (int) $horario->disciplina_id
+        );
+
         return response()->json($horario->fresh()->load(['disciplina', 'professor.usuario']));
     }
 

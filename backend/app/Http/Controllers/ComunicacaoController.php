@@ -4,9 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\{Comunicado, Mensagem};
 use Illuminate\Http\{Request, JsonResponse};
+use Illuminate\Support\Facades\Storage;
 
 class ComunicacaoController extends Controller
 {
+    private function fotoUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+        return url(Storage::disk('public')->url($path));
+    }
+
     public function comunicados(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -26,6 +33,18 @@ class ComunicacaoController extends Controller
                 )
             )
             ->orderBy('publicado_em', 'desc');
+
+        if ($request->filled('publico_alvo')) {
+            $query->where('publico_alvo', $request->string('publico_alvo'));
+        }
+
+        if ($request->filled('busca')) {
+            $termo = trim((string) $request->string('busca'));
+            $query->where(function ($q) use ($termo) {
+                $q->where('titulo', 'like', "%{$termo}%")
+                    ->orWhere('corpo', 'like', "%{$termo}%");
+            });
+        }
 
         return response()->json($query->paginate(10));
     }
@@ -52,10 +71,37 @@ class ComunicacaoController extends Controller
 
     public function mensagens(Request $request): JsonResponse
     {
-        $msgs = Mensagem::with('remetente')
-            ->where('destinatario_id', auth()->id())
+        $tipo = $request->string('tipo', 'recebidas')->toString();
+
+        $msgs = Mensagem::with(['remetente:id,nome,email,foto', 'destinatario:id,nome,email,foto'])
+            ->when($tipo === 'enviadas',
+                fn($q) => $q->where('remetente_id', auth()->id()),
+                fn($q) => $q->where('destinatario_id', auth()->id())
+            )
+            ->when($tipo !== 'enviadas' && $request->boolean('nao_lidas'),
+                fn($q) => $q->where('lida', false)
+            )
+            ->when($request->filled('busca'), function ($q) use ($request) {
+                $termo = trim((string) $request->string('busca'));
+                $q->where(function ($qq) use ($termo) {
+                    $qq->where('assunto', 'like', "%{$termo}%")
+                        ->orWhere('corpo', 'like', "%{$termo}%")
+                        ->orWhereHas('remetente', fn($u) => $u->where('nome', 'like', "%{$termo}%"))
+                        ->orWhereHas('destinatario', fn($u) => $u->where('nome', 'like', "%{$termo}%"));
+                });
+            })
             ->orderBy('criado_em', 'desc')
             ->paginate(20);
+
+        $msgs->through(function ($msg) {
+            if ($msg->remetente) {
+                $msg->remetente->foto_url = $this->fotoUrl($msg->remetente->foto);
+            }
+            if ($msg->destinatario) {
+                $msg->destinatario->foto_url = $this->fotoUrl($msg->destinatario->foto);
+            }
+            return $msg;
+        });
 
         return response()->json($msgs);
     }
@@ -70,8 +116,15 @@ class ComunicacaoController extends Controller
 
         $data['remetente_id'] = auth()->id();
         $mensagem = Mensagem::create($data);
+        $mensagem->load(['remetente:id,nome,email,foto', 'destinatario:id,nome,email,foto']);
+        if ($mensagem->remetente) {
+            $mensagem->remetente->foto_url = $this->fotoUrl($mensagem->remetente->foto);
+        }
+        if ($mensagem->destinatario) {
+            $mensagem->destinatario->foto_url = $this->fotoUrl($mensagem->destinatario->foto);
+        }
 
-        return response()->json($mensagem->load(['remetente','destinatario']), 201);
+        return response()->json($mensagem, 201);
     }
 
     public function marcarLida(int $id): JsonResponse

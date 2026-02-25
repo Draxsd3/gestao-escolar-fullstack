@@ -35,17 +35,25 @@ const NAV = [
     items: [
       { type:'group', label:'Acadêmico', icon:IcoAcademico,
         perfis:['admin','secretaria','coordenacao','professor'],
-        match:['/alunos','/matriculas','/notas'],
+        match:['/alunos','/professores','/matriculas','/notas','/professor'],
         children:[
-          { to:'/alunos',      label:'Alunos',      icon:IcoAlunos,     perfis:['admin','secretaria'] },
-          { to:'/matriculas',  label:'Matrículas',  icon:IcoMatriculas, perfis:['admin','secretaria','coordenacao'] },
-          { to:'/notas',       label:'Notas',       icon:IcoNotas,      perfis:['admin','professor','coordenacao'] },
+          { to:'/professor/portal',    label:'Minhas Turmas', icon:IcoTurmas,      perfis:['professor'] },
+          { to:'/alunos',              label:'Alunos',       icon:IcoAlunos,      perfis:['admin','secretaria'] },
+          { to:'/professores',         label:'Professores',  icon:IcoProfessores, perfis:['admin','secretaria','coordenacao'] },
+          { to:'/matriculas',          label:'Matrículas',   icon:IcoMatriculas,  perfis:['admin','secretaria','coordenacao'] },
+          { to:'/notas',               label:'Notas',        icon:IcoNotas,       perfis:['admin','professor','coordenacao'] },
+          { to:'/professor/tarefas',   label:'Tarefas',      icon:IcoTarefa,      perfis:['professor','admin'] },
         ],
       },
-      { type:'link', to:'/frequencia', label:'Frequência', icon:IcoFrequencia,
-        perfis:['admin','professor','coordenacao'] },
-      { type:'link', to:'/frequencia/relatorio', label:'Histórico de Frequência', icon:IcoClock,
-        perfis:['admin','coordenacao','professor'] },
+      // ── Portal do Aluno ──────────────────────────────────
+      { type:'group', label:'Meu Portal', icon:IcoPortalAluno,
+        perfis:['aluno'],
+        match:['/aluno'],
+        children:[
+          { to:'/aluno/boletim', label:'Meu Boletim', icon:IcoBoletim, perfis:['aluno'] },
+          { to:'/aluno/tarefas', label:'Tarefas',     icon:IcoTarefa,  perfis:['aluno'] },
+        ],
+      },
     ],
   },
   {
@@ -70,8 +78,6 @@ const NAV = [
           { to:'/financeiro/planos',        label:'Planos de Pgto.', icon:IcoPlano  },
         ],
       },
-      { type:'link', to:'/admin/usuarios', label:'Usuários', icon:IcoUsuarios,
-        perfis:['admin'] },
     ],
   },
 ]
@@ -312,26 +318,51 @@ export default function Layout() {
 
         {/* Footer do usuário */}
         <div className="sidebar-footer">
-          <div style={{
-            display:'flex', alignItems:'center', gap:9,
-            padding:'9px 11px', borderRadius:9, cursor:'default',
-          }}>
-            <div style={{
-              width:30, height:30, borderRadius:'50%', flexShrink:0,
-              background: AVATAR_BG[perfil] || AVATAR_BG.aluno,
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:11, fontWeight:700, color:'#fff',
-            }}>
-              {initials}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:12.5, fontWeight:600, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                {usuario?.nome}
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <button
+              type="button"
+              onClick={() => navigate('/perfil')}
+              title="Meu perfil"
+              style={{
+                flex:1,
+                minWidth:0,
+                display:'flex',
+                alignItems:'center',
+                gap:9,
+                padding:'9px 11px',
+                borderRadius:9,
+                border:'1px solid transparent',
+                background:'transparent',
+                cursor:'pointer',
+                textAlign:'left',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.05)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <div style={{
+                width:30, height:30, borderRadius:'50%', flexShrink:0,
+                background: AVATAR_BG[perfil] || AVATAR_BG.aluno,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:11, fontWeight:700, color:'#fff',
+                overflow:'hidden',
+              }}>
+                {usuario?.foto_url ? (
+                  <img
+                    src={usuario.foto_url}
+                    alt="Foto do usuario"
+                    style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                  />
+                ) : initials}
               </div>
-              <div style={{ fontSize:10.5, color:'var(--text-sidebar-m)', textTransform:'capitalize' }}>
-                {perfil}
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:12.5, fontWeight:600, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  {usuario?.nome}
+                </div>
+                <div style={{ fontSize:10.5, color:'var(--text-sidebar-m)', textTransform:'capitalize' }}>
+                  {perfil}
+                </div>
               </div>
-            </div>
+            </button>
             <button onClick={handleLogout} title="Sair"
               style={{
                 background:'none', border:'none', cursor:'pointer',
@@ -364,26 +395,27 @@ export default function Layout() {
             {/* ══ Indicador Ano Letivo / Período Ativo ══ */}
             <div style={{
               display:'flex', alignItems:'center', gap:6,
-              background: periodoAtivo ? 'linear-gradient(135deg, rgba(26,109,212,0.08), rgba(59,142,245,0.12))' : 'rgba(239,68,68,0.08)',
-              border: periodoAtivo ? '1px solid rgba(26,109,212,0.2)' : '1px solid rgba(239,68,68,0.2)',
-              borderRadius:8, padding:'5px 12px',
+              background:'var(--bg-card)',
+              border:'1px solid var(--border-light)',
+              borderRadius:999, padding:'5px 10px',
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={periodoAtivo ? '#1a6dd4' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
               <span style={{
-                fontSize:12, fontWeight:700,
-                color: periodoAtivo ? '#1a6dd4' : '#ef4444',
+                fontSize:12, fontWeight:600,
+                color:'var(--text-primary)',
                 whiteSpace:'nowrap',
               }}>
                 {labelVigente}
               </span>
               {anoLetivo?.modelo_periodo && (
                 <span style={{
-                  fontSize:10, fontWeight:600,
-                  color: '#fff',
-                  background: anoLetivo.modelo_periodo === 'semestral' ? '#8b5cf6' : '#059669',
-                  borderRadius:4, padding:'1px 6px',
+                  fontSize:10, fontWeight:700,
+                  color:'var(--text-muted)',
+                  background:'transparent',
+                  border:'1px solid var(--border-light)',
+                  borderRadius:999, padding:'1px 6px',
                   textTransform:'uppercase', letterSpacing:0.3,
                 }}>
                   {anoLetivo.modelo_periodo === 'semestral' ? 'SEM' : 'BIM'}
@@ -391,15 +423,6 @@ export default function Layout() {
               )}
             </div>
 
-            <span style={{ fontSize:13, color:'var(--text-secondary)', fontWeight:500 }}>{usuario?.nome}</span>
-            <div style={{
-              width:30, height:30, borderRadius:'50%',
-              background: AVATAR_BG[perfil] || AVATAR_BG.aluno,
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:11, fontWeight:700, color:'#fff',
-            }}>
-              {initials}
-            </div>
           </div>
         </header>
 
@@ -424,9 +447,13 @@ const I = ({ size=16, children }) => (
 function IcoDashboard ({ size=16 }) { return <I size={size}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></I> }
 function IcoGestao    ({ size=16 }) { return <I size={size}><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></I> }
 function IcoAcademico ({ size=16 }) { return <I size={size}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></I> }
-function IcoAlunos    ({ size=16 }) { return <I size={size}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></I> }
+function IcoAlunos      ({ size=16 }) { return <I size={size}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></I> }
+function IcoProfessores ({ size=16 }) { return <I size={size}><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><line x1="12" y1="12" x2="12" y2="15"/><line x1="9" y1="15" x2="15" y2="15"/></I> }
 function IcoMatriculas({ size=16 }) { return <I size={size}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></I> }
 function IcoNotas     ({ size=16 }) { return <I size={size}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></I> }
+function IcoTarefa    ({ size=16 }) { return <I size={size}><rect x="4" y="3" width="16" height="18" rx="2"/><polyline points="8 8 10 10 14 6"/><line x1="8" y1="14" x2="16" y2="14"/></I> }
+function IcoPortalAluno({ size=16 }) { return <I size={size}><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8 17c.9-1.8 2.3-2.7 4-2.7S15.1 15.2 16 17"/></I> }
+function IcoBoletim   ({ size=16 }) { return <I size={size}><path d="M6 2h9l4 4v16H6z"/><polyline points="15 2 15 6 19 6"/><line x1="9" y1="11" x2="16" y2="11"/><line x1="9" y1="15" x2="16" y2="15"/></I> }
 function IcoFrequencia({ size=16 }) { return <I size={size}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></I> }
 function IcoComunicados({ size=16 }){ return <I size={size}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></I> }
 function IcoMensagens ({ size=16 }) { return <I size={size}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></I> }

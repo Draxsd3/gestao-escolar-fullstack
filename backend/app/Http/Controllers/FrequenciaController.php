@@ -4,10 +4,61 @@ namespace App\Http\Controllers;
 
 use App\Models\{AnoLetivo, Aula, Frequencia, Matricula, PeriodoAvaliacao, Turma};
 use Illuminate\Http\{Request, JsonResponse};
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\{DB, Schema};
 
 class FrequenciaController extends Controller
 {
+    private function presencasDoRegistro(bool $presente, ?string $justificativa, int $numeroAulas): int
+    {
+        $numeroAulas = max(1, $numeroAulas);
+        if ($presente) return $numeroAulas;
+        if (!$justificativa) return 0;
+
+        if (preg_match('/presenca parcial:\s*(\d+)\s*\/\s*(\d+)/i', $justificativa, $m)) {
+            $presencas = (int) $m[1];
+            $base = max(1, (int) $m[2]);
+            if ($base === $numeroAulas) {
+                return max(0, min($numeroAulas, $presencas));
+            }
+            $proporcional = (int) round(($presencas / $base) * $numeroAulas);
+            return max(0, min($numeroAulas, $proporcional));
+        }
+
+        return 0;
+    }
+
+    private function disciplinaPertenceTurma(int $turmaId, int $disciplinaId): bool
+    {
+        return DB::table('grade_curricular')
+            ->where('turma_id', $turmaId)
+            ->where('disciplina_id', $disciplinaId)
+            ->exists();
+    }
+
+    private function professorPodeLancar(int $professorId, int $turmaId, int $disciplinaId): bool
+    {
+        $temVinculoPTD = DB::table('professor_turma_disciplina')
+            ->where('professor_id', $professorId)
+            ->where('turma_id', $turmaId)
+            ->where('disciplina_id', $disciplinaId)
+            ->exists();
+        if ($temVinculoPTD) return true;
+
+        $temVinculoHorario = DB::table('horarios')
+            ->where('professor_id', $professorId)
+            ->where('turma_id', $turmaId)
+            ->where('disciplina_id', $disciplinaId)
+            ->exists();
+        if ($temVinculoHorario) return true;
+
+        if (!Schema::hasTable('professor_disciplina')) return false;
+
+        return DB::table('professor_disciplina')
+            ->where('professor_id', $professorId)
+            ->where('disciplina_id', $disciplinaId)
+            ->exists();
+    }
+
     /**
      * Verifica se uma data de aula está dentro do período ativo.
      */
@@ -47,6 +98,22 @@ class FrequenciaController extends Controller
             'disciplina_id' => ['required', 'exists:disciplinas,id'],
             'data_aula'     => ['required', 'date'],
         ]);
+
+        if (!$this->disciplinaPertenceTurma((int) $request->turma_id, (int) $request->disciplina_id)) {
+            return response()->json([
+                'message' => 'A disciplina selecionada nao pertence a grade desta turma.',
+            ], 422);
+        }
+
+        $usuario = $request->user()->loadMissing('perfil', 'professor');
+        if ($usuario?->perfil?->nome === 'professor') {
+            $professorId = $usuario?->professor?->id;
+            if (!$professorId || !$this->professorPodeLancar($professorId, (int) $request->turma_id, (int) $request->disciplina_id)) {
+                return response()->json([
+                    'message' => 'Voce nao possui permissao para lancar chamada desta disciplina nesta turma.',
+                ], 403);
+            }
+        }
 
         $aula = Aula::where('turma_id', $request->turma_id)
             ->where('disciplina_id', $request->disciplina_id)
@@ -110,6 +177,22 @@ class FrequenciaController extends Controller
             'frequencias.*.presente'   => ['required', 'boolean'],
             'frequencias.*.justificativa' => ['nullable', 'string'],
         ]);
+
+        if (!$this->disciplinaPertenceTurma((int) $data['turma_id'], (int) $data['disciplina_id'])) {
+            return response()->json([
+                'message' => 'A disciplina selecionada nao pertence a grade desta turma.',
+            ], 422);
+        }
+
+        $usuario = $request->user()->loadMissing('perfil', 'professor');
+        if ($usuario?->perfil?->nome === 'professor') {
+            $professorId = $usuario?->professor?->id;
+            if (!$professorId || !$this->professorPodeLancar($professorId, (int) $data['turma_id'], (int) $data['disciplina_id'])) {
+                return response()->json([
+                    'message' => 'Voce nao possui permissao para lancar chamada desta disciplina nesta turma.',
+                ], 403);
+            }
+        }
 
         // ══ VALIDAÇÃO: Período ativo ══
         $turma = Turma::findOrFail($data['turma_id']);
@@ -238,10 +321,37 @@ class FrequenciaController extends Controller
 
         $frequenciasPorAula = $frequencias->groupBy('aula_id');
 
+        $aulasById = $aulas->keyBy('id');
+
         $aulasHistorico = $aulas->map(function ($aula) use ($frequenciasPorAula) {
             $registros = $frequenciasPorAula->get($aula->id, collect())->values();
-            $total = $registros->count();
-            $presencas = $registros->where('presente', 1)->count();
+            $numeroAulas = max(1, (int) ($aula->numero_aulas ?? 1));
+
+            $registrosDetalhados = $registros->map(function ($r) use ($numeroAulas) {
+                $presencasAula = $this->presencasDoRegistro((bool) $r->presente, $r->justificativa, $numeroAulas);
+                $faltasAula = $numeroAulas - $presencasAula;
+                $status = $presencasAula === $numeroAulas ? 'presente' : ($presencasAula > 0 ? 'parcial' : 'falta');
+
+                return [
+                    'aluno_id' => $r->aluno_id,
+                    'aluno' => $r->aluno_nome,
+                    'presente' => (bool) $r->presente,
+                    'justificativa' => $r->justificativa,
+                    'presencas_aula' => $presencasAula,
+                    'faltas_aula' => $faltasAula,
+                    'numero_aulas' => $numeroAulas,
+                    'status' => $status,
+                ];
+            })->values();
+
+            $totalSlots = $registrosDetalhados->count() * $numeroAulas;
+            $totalPresencasSlots = $registrosDetalhados->sum('presencas_aula');
+            $totalFaltasSlots = $totalSlots - $totalPresencasSlots;
+
+            $alunosPresentes = $registrosDetalhados->where('status', 'presente')->count();
+            $alunosParciais = $registrosDetalhados->where('status', 'parcial')->count();
+            $alunosFaltas = $registrosDetalhados->where('status', 'falta')->count();
+
             return [
                 'aula_id'       => $aula->id,
                 'data_aula'     => optional($aula->data_aula)->format('Y-m-d'),
@@ -250,20 +360,30 @@ class FrequenciaController extends Controller
                 'sala'          => $aula->turma?->sala,
                 'disciplina_id' => $aula->disciplina_id,
                 'disciplina'    => $aula->disciplina?->nome,
-                'total_alunos'  => $total,
-                'presencas'     => $presencas,
-                'faltas'        => $total - $presencas,
-                'percentual'    => $total > 0 ? round(($presencas / $total) * 100, 1) : 0.0,
-                'registros'     => $registros->map(fn($r) => [
-                    'aluno_id' => $r->aluno_id, 'aluno' => $r->aluno_nome,
-                    'presente' => (bool) $r->presente, 'justificativa' => $r->justificativa,
-                ])->values(),
+                'numero_aulas'  => $numeroAulas,
+                'total_alunos'  => $registrosDetalhados->count(),
+                'presencas'     => $totalPresencasSlots,
+                'faltas'        => $totalFaltasSlots,
+                'percentual'    => $totalSlots > 0 ? round(($totalPresencasSlots / $totalSlots) * 100, 1) : 0.0,
+                'alunos_presentes' => $alunosPresentes,
+                'alunos_parciais' => $alunosParciais,
+                'alunos_faltas' => $alunosFaltas,
+                'registros'     => $registrosDetalhados,
             ];
         })->values();
 
-        $resumoAlunos = $frequencias->groupBy('aluno_id')->map(function ($itens) {
-            $total = $itens->count();
-            $presencas = $itens->where('presente', 1)->count();
+        $resumoAlunos = $frequencias->groupBy('aluno_id')->map(function ($itens) use ($aulasById) {
+            $totais = $itens->reduce(function ($acc, $item) use ($aulasById) {
+                $numeroAulas = max(1, (int) ($aulasById->get($item->aula_id)?->numero_aulas ?? 1));
+                $presencas = $this->presencasDoRegistro((bool) $item->presente, $item->justificativa, $numeroAulas);
+                $acc['total'] += $numeroAulas;
+                $acc['presencas'] += $presencas;
+                return $acc;
+            }, ['total' => 0, 'presencas' => 0]);
+
+            $total = (int) $totais['total'];
+            $presencas = (int) $totais['presencas'];
+
             return [
                 'aluno_id' => (int) $itens->first()->aluno_id,
                 'aluno' => $itens->first()->aluno_nome,
@@ -274,7 +394,9 @@ class FrequenciaController extends Controller
         })->sortBy('aluno')->values();
 
         $totalRegistros = $frequencias->count();
-        $totalPresencas = $frequencias->where('presente', 1)->count();
+        $totalAulasLancadas = $aulas->sum(fn($aula) => max(1, (int) ($aula->numero_aulas ?? 1)));
+        $totalSlots = $resumoAlunos->sum('total_aulas');
+        $totalPresencas = $resumoAlunos->sum('presencas');
 
         return response()->json([
             'turma' => $turma ? ['id' => $turma->id, 'nome' => $turma->nome, 'sala' => $turma->sala] : null,
@@ -286,10 +408,12 @@ class FrequenciaController extends Controller
             ],
             'resumo' => [
                 'total_aulas' => $aulas->count(),
+                'total_aulas_lancadas' => $totalAulasLancadas,
                 'total_registros' => $totalRegistros,
+                'total_slots' => $totalSlots,
                 'total_presencas' => $totalPresencas,
-                'total_faltas' => $totalRegistros - $totalPresencas,
-                'percentual_geral' => $totalRegistros > 0 ? round(($totalPresencas / $totalRegistros) * 100, 1) : 0.0,
+                'total_faltas' => $totalSlots - $totalPresencas,
+                'percentual_geral' => $totalSlots > 0 ? round(($totalPresencas / $totalSlots) * 100, 1) : 0.0,
                 'alunos_avaliados' => $resumoAlunos->count(),
             ],
             'aulas' => $aulasHistorico,

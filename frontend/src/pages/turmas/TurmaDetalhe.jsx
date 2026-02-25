@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
 import { Button, Badge, Loading, Card, Modal, Alert } from '../../components/ui'
+import { ICON_BUTTON_STYLE, EditIcon, DeleteIcon } from '../../components/ui/actionIcons'
 
 const DIAS = [
   { value: 1, label: 'Segunda' },
@@ -41,7 +42,7 @@ export default function TurmaDetalhe() {
       const [turmaRes, disciplinasRes, professoresRes] = await Promise.all([
         api.get(`/turmas/${id}`),
         api.get('/disciplinas').catch(() => ({ data: [] })),
-        api.get('/professores').catch(() => ({ data: [] })),
+        api.get('/professores-turma').catch(() => ({ data: [] })),
       ])
       setTurma(turmaRes.data || null)
       setDisciplinasCatalogo(disciplinasRes.data.data || disciplinasRes.data || [])
@@ -262,8 +263,8 @@ export default function TurmaDetalhe() {
                   <td><Badge variant="secondary">{d.codigo || '-'}</Badge></td>
                   <td style={{ fontFamily: 'var(--mono)' }}>{d.pivot?.aulas_semanais || 2}</td>
                   <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                    <Button variant="ghost" size="sm" onClick={() => openEditDisc(d)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
-                    <Button variant="ghost" size="sm" onClick={() => removeDisc(d)} title="Excluir" style={{ fontSize: 18, lineHeight: 1 }}>🗑</Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEditDisc(d)} title="Editar" style={ICON_BUTTON_STYLE}><EditIcon /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => removeDisc(d)} title="Excluir" style={ICON_BUTTON_STYLE}><DeleteIcon /></Button>
                   </td>
                 </tr>
               ))}</tbody>
@@ -290,8 +291,8 @@ export default function TurmaDetalhe() {
                   <td>{h.disciplina?.nome || '-'}</td>
                   <td>{h.professor?.usuario?.nome || h.professor?.nome || '-'}</td>
                   <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                    <Button variant="ghost" size="sm" onClick={() => openEditHorario(h)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
-                    <Button variant="ghost" size="sm" onClick={() => removeHorario(h)} title="Excluir" style={{ fontSize: 18, lineHeight: 1 }}>🗑</Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEditHorario(h)} title="Editar" style={ICON_BUTTON_STYLE}><EditIcon /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => removeHorario(h)} title="Excluir" style={ICON_BUTTON_STYLE}><DeleteIcon /></Button>
                   </td>
                 </tr>
               ))}</tbody>

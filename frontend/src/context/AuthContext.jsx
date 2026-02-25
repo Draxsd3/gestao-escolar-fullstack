@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import api from '../services/api'
 
 const AuthContext = createContext(null)
@@ -36,9 +36,31 @@ export function AuthProvider({ children }) {
     setUsuario(null)
   }, [])
 
+  const atualizarUsuario = useCallback((proximoUsuario) => {
+    if (!proximoUsuario) return
+    localStorage.setItem('babel_usuario', JSON.stringify(proximoUsuario))
+    setUsuario(proximoUsuario)
+  }, [])
+
   const isPerfil = useCallback((...perfis) => {
     return perfis.includes(usuario?.perfil)
   }, [usuario])
+
+  useEffect(() => {
+    const token = localStorage.getItem('babel_token')
+    if (!token) return
+
+    let ativo = true
+    api.get('/auth/me', { skipErrorMessage: true })
+      .then(({ data }) => {
+        if (!ativo || !data) return
+        localStorage.setItem('babel_usuario', JSON.stringify(data))
+        setUsuario(data)
+      })
+      .catch(() => {})
+
+    return () => { ativo = false }
+  }, [])
 
   return (
     <AuthContext.Provider value={{
@@ -46,6 +68,7 @@ export function AuthProvider({ children }) {
       autenticado: !!usuario,
       login,
       logout,
+      atualizarUsuario,
       isPerfil,
     }}>
       {children}

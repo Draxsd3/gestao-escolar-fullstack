@@ -18,6 +18,140 @@ class GestaoController extends Controller
         ], 422);
     }
 
+    private function professoresDaTurmaDisciplina(int $turmaId, int $disciplinaId): array
+    {
+        $nomes = collect();
+
+        if (Schema::hasTable('professor_turma_disciplina')) {
+            $nomes = $nomes->merge(
+                DB::table('professor_turma_disciplina as ptd')
+                    ->join('professores as p', 'p.id', '=', 'ptd.professor_id')
+                    ->join('usuarios as u', 'u.id', '=', 'p.usuario_id')
+                    ->where('ptd.turma_id', $turmaId)
+                    ->where('ptd.disciplina_id', $disciplinaId)
+                    ->pluck('u.nome')
+                    ->all()
+            );
+        }
+
+        if (Schema::hasTable('horarios')) {
+            $nomes = $nomes->merge(
+                DB::table('horarios as h')
+                    ->join('professores as p', 'p.id', '=', 'h.professor_id')
+                    ->join('usuarios as u', 'u.id', '=', 'p.usuario_id')
+                    ->where('h.turma_id', $turmaId)
+                    ->where('h.disciplina_id', $disciplinaId)
+                    ->pluck('u.nome')
+                    ->all()
+            );
+        }
+
+        if (Schema::hasTable('professor_disciplina')) {
+            $nomes = $nomes->merge(
+                DB::table('professor_disciplina as pd')
+                    ->join('professores as p', 'p.id', '=', 'pd.professor_id')
+                    ->join('usuarios as u', 'u.id', '=', 'p.usuario_id')
+                    ->where('pd.disciplina_id', $disciplinaId)
+                    ->pluck('u.nome')
+                    ->all()
+            );
+        }
+
+        return $nomes
+            ->filter(fn($n) => is_string($n) && trim($n) !== '')
+            ->map(fn($n) => trim($n))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function pendenciasLancamentoNotas(PeriodoAvaliacao $periodo): array
+    {
+        if (
+            !Schema::hasTable('turmas') ||
+            !Schema::hasTable('grade_curricular') ||
+            !Schema::hasTable('matriculas') ||
+            !Schema::hasTable('notas')
+        ) {
+            return [
+                'total_pendencias' => 0,
+                'total_alunos_sem_nota' => 0,
+                'resumo' => [],
+                'professores' => [],
+            ];
+        }
+
+        $pendencias = DB::table('turmas as t')
+            ->join('grade_curricular as gc', 'gc.turma_id', '=', 't.id')
+            ->join('disciplinas as d', 'd.id', '=', 'gc.disciplina_id')
+            ->join('matriculas as m', function ($join) {
+                $join->on('m.turma_id', '=', 't.id')
+                    ->where('m.situacao', 'ativa');
+            })
+            ->leftJoin('notas as n', function ($join) use ($periodo) {
+                $join->on('n.matricula_id', '=', 'm.id')
+                    ->on('n.disciplina_id', '=', 'd.id')
+                    ->where('n.periodo_id', '=', $periodo->id);
+            })
+            ->where('t.ano_letivo_id', $periodo->ano_letivo_id)
+            ->where('t.ativa', true)
+            ->groupBy('t.id', 't.nome', 'd.id', 'd.nome')
+            ->havingRaw('SUM(CASE WHEN n.id IS NULL THEN 1 ELSE 0 END) > 0')
+            ->selectRaw('
+                t.id as turma_id,
+                t.nome as turma_nome,
+                d.id as disciplina_id,
+                d.nome as disciplina_nome,
+                COUNT(m.id) as total_alunos,
+                SUM(CASE WHEN n.id IS NULL THEN 1 ELSE 0 END) as alunos_sem_nota
+            ')
+            ->orderBy('t.nome')
+            ->orderBy('d.nome')
+            ->get();
+
+        if ($pendencias->isEmpty()) {
+            return [
+                'total_pendencias' => 0,
+                'total_alunos_sem_nota' => 0,
+                'resumo' => [],
+                'professores' => [],
+            ];
+        }
+
+        $cacheProfessores = [];
+        $professoresPendentes = collect();
+
+        $resumo = $pendencias->map(function ($p) use (&$cacheProfessores, &$professoresPendentes) {
+            $turmaId = (int) $p->turma_id;
+            $disciplinaId = (int) $p->disciplina_id;
+            $cacheKey = "{$turmaId}:{$disciplinaId}";
+
+            if (!isset($cacheProfessores[$cacheKey])) {
+                $cacheProfessores[$cacheKey] = $this->professoresDaTurmaDisciplina($turmaId, $disciplinaId);
+            }
+
+            $nomesProfessores = $cacheProfessores[$cacheKey];
+            $professoresPendentes = $professoresPendentes->merge($nomesProfessores);
+
+            return [
+                'turma_id' => $turmaId,
+                'turma' => $p->turma_nome,
+                'disciplina_id' => $disciplinaId,
+                'disciplina' => $p->disciplina_nome,
+                'total_alunos' => (int) $p->total_alunos,
+                'alunos_sem_nota' => (int) $p->alunos_sem_nota,
+                'professores' => $nomesProfessores,
+            ];
+        })->values();
+
+        return [
+            'total_pendencias' => $resumo->count(),
+            'total_alunos_sem_nota' => (int) $resumo->sum('alunos_sem_nota'),
+            'resumo' => $resumo->take(15)->all(),
+            'professores' => $professoresPendentes->unique()->values()->all(),
+        ];
+    }
+
     // ═══════════════════════════════════════════════════════
     // ANO LETIVO + PERÍODOS — Sistema refatorado
     // ═══════════════════════════════════════════════════════
@@ -187,6 +321,22 @@ class GestaoController extends Controller
         $periodoAtivo = $anoLetivo->periodoAtivo();
         if (!$periodoAtivo || $periodoAtivo->id !== $periodo->id) {
             return response()->json(['message' => 'Só é possível fechar o período ativo atual.'], 422);
+        }
+
+        $pendencias = $this->pendenciasLancamentoNotas($periodo);
+        if (($pendencias['total_pendencias'] ?? 0) > 0) {
+            $totalPendencias = (int) $pendencias['total_pendencias'];
+            $totalAlunosSemNota = (int) $pendencias['total_alunos_sem_nota'];
+            $totalProfessores = count($pendencias['professores'] ?? []);
+
+            return response()->json([
+                'message' => "Nao e possivel fechar o periodo. Existem {$totalAlunosSemNota} lancamentos pendentes de nota.",
+                'hint' => $totalProfessores > 0
+                    ? "Pendencias encontradas em {$totalPendencias} turma(s)/disciplina(s), envolvendo {$totalProfessores} professor(es)."
+                    : "Pendencias encontradas em {$totalPendencias} turma(s)/disciplina(s).",
+                'pendencias' => $pendencias['resumo'],
+                'professores_pendentes' => $pendencias['professores'],
+            ], 422);
         }
 
         DB::transaction(function () use ($periodo, $anoLetivo) {
@@ -456,17 +606,22 @@ class GestaoController extends Controller
     {
         $cursoId = request()->integer('curso_id');
         $usaVinculoCurso = Schema::hasTable('curso_disciplina');
+        $usaVinculoProfessor = Schema::hasTable('professor_disciplina');
         $query = Disciplina::query()->orderBy('nome');
 
         if ($usaVinculoCurso) {
             $query->with('cursos:id,nome');
+        }
+        if ($usaVinculoProfessor) {
+            $query->with('professores:id,usuario_id');
+            $query->with('professores.usuario:id,nome');
         }
 
         if ($cursoId && $usaVinculoCurso) {
             $query->whereHas('cursos', fn($q) => $q->where('niveis_ensino.id', $cursoId));
         }
 
-        $items = $query->get()->map(function (Disciplina $disciplina) use ($usaVinculoCurso) {
+        $items = $query->get()->map(function (Disciplina $disciplina) use ($usaVinculoCurso, $usaVinculoProfessor) {
             return [
                 'id' => $disciplina->id,
                 'nome' => $disciplina->nome,
@@ -478,6 +633,15 @@ class GestaoController extends Controller
                     : [],
                 'curso_ids' => $usaVinculoCurso
                     ? $disciplina->cursos->pluck('id')->map(fn($id) => (int) $id)->values()
+                    : [],
+                'professores' => $usaVinculoProfessor
+                    ? $disciplina->professores->map(fn($p) => [
+                        'id' => $p->id,
+                        'nome' => $p->usuario?->nome ?? "Professor {$p->id}",
+                    ])->values()
+                    : [],
+                'professor_ids' => $usaVinculoProfessor
+                    ? $disciplina->professores->pluck('id')->map(fn($id) => (int) $id)->values()
                     : [],
             ];
         });
@@ -500,6 +664,8 @@ class GestaoController extends Controller
             'carga_horaria_semanal' => 'nullable|integer|min:1|max:20',
             'curso_ids' => 'required|array|min:1',
             'curso_ids.*' => 'integer|exists:niveis_ensino,id',
+            'professor_ids' => 'nullable|array',
+            'professor_ids.*' => 'integer|exists:professores,id',
         ]);
 
         $item = DB::transaction(function () use ($request) {
@@ -510,6 +676,9 @@ class GestaoController extends Controller
                 'ativa' => true,
             ]);
             $disciplina->cursos()->sync($request->input('curso_ids', []));
+            if (Schema::hasTable('professor_disciplina')) {
+                $disciplina->professores()->sync($request->input('professor_ids', []));
+            }
 
             return $disciplina;
         });
@@ -534,6 +703,8 @@ class GestaoController extends Controller
             'ativa' => 'sometimes|boolean',
             'curso_ids' => 'sometimes|array|min:1',
             'curso_ids.*' => 'integer|exists:niveis_ensino,id',
+            'professor_ids' => 'sometimes|array',
+            'professor_ids.*' => 'integer|exists:professores,id',
         ]);
 
         DB::transaction(function () use ($item, $request) {
@@ -542,6 +713,9 @@ class GestaoController extends Controller
 
             if ($request->has('curso_ids')) {
                 $item->cursos()->sync($request->input('curso_ids', []));
+            }
+            if (Schema::hasTable('professor_disciplina') && $request->has('professor_ids')) {
+                $item->professores()->sync($request->input('professor_ids', []));
             }
         });
 
@@ -557,6 +731,9 @@ class GestaoController extends Controller
             ['type' => 'horarios', 'count' => DB::table('horarios')->where('disciplina_id', $id)->count()],
             ['type' => 'aulas', 'count' => DB::table('aulas')->where('disciplina_id', $id)->count()],
             ['type' => 'notas', 'count' => DB::table('notas')->where('disciplina_id', $id)->count()],
+            ['type' => 'professores', 'count' => Schema::hasTable('professor_disciplina')
+                ? DB::table('professor_disciplina')->where('disciplina_id', $id)->count()
+                : 0],
         ], fn($d) => $d['count'] > 0);
 
         if (!empty($deps)) {

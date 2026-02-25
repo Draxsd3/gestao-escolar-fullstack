@@ -10,6 +10,7 @@ class Mensagem extends Model
     protected $fillable = ['remetente_id', 'destinatario_id', 'assunto', 'corpo', 'lida', 'lida_em'];
     protected $casts = ['lida' => 'boolean', 'lida_em' => 'datetime'];
 
+    const CREATED_AT = 'criado_em';
     const UPDATED_AT = null;
 
     public function remetente()    { return $this->belongsTo(User::class, 'remetente_id'); }

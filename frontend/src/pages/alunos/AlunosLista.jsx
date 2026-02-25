@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { Button, Badge, Loading, EmptyState, Pagination, Alert } from '../../components/ui'
+import { ICON_BUTTON_STYLE, EditIcon, ViewIcon, DeleteIcon } from '../../components/ui/actionIcons'
 
 export default function AlunosLista() {
-  const [alunos, setAlunos]   = useState([])
-  const [meta, setMeta]       = useState(null)
-  const [page, setPage]       = useState(1)
-  const [busca, setBusca]     = useState('')
+  const [alunos, setAlunos] = useState([])
+  const [meta, setMeta] = useState(null)
+  const [page, setPage] = useState(1)
+  const [busca, setBusca] = useState('')
   const [loading, setLoading] = useState(true)
-  const [msg, setMsg]         = useState('')
+  const [msg, setMsg] = useState('')
   const [confirmDel, setConfirmDel] = useState(null)
   const navigate = useNavigate()
 
@@ -21,11 +22,19 @@ export default function AlunosLista() {
       setMeta(r.data.meta || null)
     } catch (err) {
       console.error('Erro ao carregar alunos:', err)
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(() => { fetchAlunos(page) }, [page])
-  useEffect(() => { setPage(1); fetchAlunos(1) }, [busca])
+  useEffect(() => {
+    fetchAlunos(page)
+  }, [page])
+
+  useEffect(() => {
+    setPage(1)
+    fetchAlunos(1)
+  }, [busca])
 
   const desativar = async (id) => {
     try {
@@ -44,7 +53,7 @@ export default function AlunosLista() {
       <div className="page-header">
         <div>
           <div className="page-title">Alunos</div>
-          <div className="page-sub">Gerenciar cadastros e informações dos alunos</div>
+          <div className="page-sub">Gerenciar cadastros e informacoes dos alunos</div>
         </div>
         <Button onClick={() => navigate('/alunos/novo')}>+ Novo Aluno</Button>
       </div>
@@ -54,9 +63,9 @@ export default function AlunosLista() {
       {confirmDel && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
           <div style={{ background: '#fff', borderRadius: 14, padding: '28px 24px', maxWidth: 400, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Confirmar Desativação</div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Confirmar Desativacao</div>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
-              Deseja desativar o aluno <strong>{confirmDel.nome}</strong>? O registro não será excluído permanentemente.
+              Deseja desativar o aluno <strong>{confirmDel.nome}</strong>? O registro nao sera excluido permanentemente.
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <Button variant="secondary" onClick={() => setConfirmDel(null)}>Cancelar</Button>
@@ -70,7 +79,12 @@ export default function AlunosLista() {
         <div className="filter-bar">
           <div className="search-wrap">
             <span className="search-icon">🔍</span>
-            <input className="form-control" placeholder="Buscar por nome, CPF ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} />
+            <input
+              className="form-control"
+              placeholder="Buscar por nome, CPF ou e-mail..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+            />
           </div>
         </div>
 
@@ -80,7 +94,16 @@ export default function AlunosLista() {
           <>
             <div className="table-wrap">
               <table>
-                <thead><tr><th>#</th><th>Nome</th><th>CPF</th><th>E-mail</th><th>Situação</th><th></th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>E-mail</th>
+                    <th>Situacao</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 <tbody>
                   {alunos.map(a => (
                     <tr key={a.id}>
@@ -92,18 +115,53 @@ export default function AlunosLista() {
                           </div>
                           <div>
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13.5 }}>{a.nome}</div>
-                            {a.data_nascimento && <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{new Date(a.data_nascimento).toLocaleDateString('pt-BR')}</div>}
+                            {a.data_nascimento && (
+                              <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                                {new Date(a.data_nascimento).toLocaleDateString('pt-BR')}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
-                      <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{a.cpf || '—'}</td>
-                      <td style={{ fontSize: 13 }}>{a.email || '—'}</td>
-                      <td><Badge variant={a.ativo !== false ? 'success' : 'secondary'}>{a.ativo !== false ? 'Ativo' : 'Inativo'}</Badge></td>
+                      <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{a.cpf || '-'} </td>
+                      <td style={{ fontSize: 13 }}>{a.email || '-'}</td>
                       <td>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/alunos/${a.id}`)}>👁 Ver</Button>
-                          <Button variant="secondary" size="sm" onClick={() => navigate(`/alunos/${a.id}/editar`)} title="Editar" style={{ fontSize: 18, lineHeight: 1 }}>✎</Button>
-                          <Button variant="danger" size="sm" onClick={() => setConfirmDel(a)} title="Excluir" style={{ fontSize: 18, lineHeight: 1 }}>🗑</Button>
+                        <Badge variant={a.ativo !== false ? 'success' : 'secondary'}>
+                          {a.ativo !== false ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/alunos/${a.id}`)}
+                            title="Ver detalhes"
+                            aria-label="Ver detalhes"
+                            style={ICON_BUTTON_STYLE}
+                          >
+                            <ViewIcon />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/alunos/${a.id}/editar`)}
+                            title="Editar aluno"
+                            aria-label="Editar aluno"
+                            style={ICON_BUTTON_STYLE}
+                          >
+                            <EditIcon />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setConfirmDel(a)}
+                            title="Desativar aluno"
+                            aria-label="Desativar aluno"
+                            style={ICON_BUTTON_STYLE}
+                          >
+                            <DeleteIcon />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -118,4 +176,3 @@ export default function AlunosLista() {
     </div>
   )
 }
-

@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Funcionario extends Model
 {
     protected $table = 'funcionarios';
+
+    const CREATED_AT = 'criado_em';
+    const UPDATED_AT = null;
+
     protected $fillable = ['usuario_id', 'cpf', 'cargo', 'departamento', 'data_admissao', 'salario', 'ativo'];
     protected $casts = ['data_admissao' => 'date', 'ativo' => 'boolean'];
 
