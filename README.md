@@ -74,19 +74,19 @@ babel/
 ## Demonstracao Visual
 
 ### 1) Selecao de Portais
-![Selecao de portais](docs/screenshots/01-selecao-portais.png)
+![Selecao de portais](docs/screenshots/selecao-portais.png)
 
 ### 2) Login por Perfil (Admin)
-![Login admin](docs/screenshots/02-login-admin.png)
+![Login admin](docs/screenshots/login-admin.png)
 
 ### 3) Dashboard Administrativo
-![Dashboard administrativo](docs/screenshots/03-dashboard-admin.png)
+![Dashboard administrativo](docs/screenshots/dashboard-admin.png)
 
 ### 4) Mensagens Internas
-![Mensagens internas](docs/screenshots/04-mensagens-internas.png)
+![Mensagens internas](docs/screenshots/mensagens-internas.png)
 
 ### 5) Gestao de Tarefas
-![Gestao de tarefas](docs/screenshots/05-tarefas-professor.png)
+![Gestao de tarefas](docs/screenshots/tarefas-professor.png)
 
 ## Fluxo Tecnico (Resumo)
 
