@@ -77,10 +77,23 @@ function SelecaoPortal({ onSelect, portalCarregando }) {
       alignItems: 'center', justifyContent: 'center',
       padding: '40px 24px', fontFamily: FONT,
     }}>
-      <img src={logoLarge} alt="Babel" style={{
-        height: 90, width: 'auto', objectFit: 'contain',
-        filter: 'brightness(0) invert(1)', marginBottom: 28,
-      }}/>
+      <div style={{
+        width: 360,
+        maxWidth: '85vw',
+        height: 96,
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 28,
+      }}>
+        <img src={logoLarge} alt="Babel" style={{
+          height: 250,
+          width: 'auto',
+          objectFit: 'contain',
+          filter: 'brightness(0) invert(1)',
+        }}/>
+      </div>
 
       <p style={{
         fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,.75)',
@@ -267,7 +280,25 @@ function FormLogin({ portal, onVoltar }) {
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         }}>
           <div>
-            <img src={logoLarge} alt="" style={{ height: 34, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}/>
+            <div style={{
+              width: 190,
+              maxWidth: '80%',
+              height: 46,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+            }}>
+              <img
+                src={logoLarge}
+                alt="Babel"
+                style={{
+                  height: 132,
+                  width: 'auto',
+                  objectFit: 'contain',
+                  filter: 'brightness(0) invert(1)',
+                }}
+              />
+            </div>
             <div style={{ marginTop: 24, fontSize: 12, letterSpacing: '1.8px', textTransform: 'uppercase', opacity: .75 }}>
               Portal {portal.label}
             </div>
@@ -302,6 +333,27 @@ function FormLogin({ portal, onVoltar }) {
           flexDirection: 'column',
           justifyContent: 'center',
         }}>
+          <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{
+              width: 172,
+              maxWidth: '70%',
+              height: 42,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+            }}>
+              <img
+                src={logoLarge}
+                alt="Logo Babel"
+                style={{
+                  height: 110,
+                  width: 'auto',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          </div>
+
           <div style={{ marginBottom: 18 }}>
             <div style={{
               fontSize: 11, fontWeight: 700, letterSpacing: '2px',

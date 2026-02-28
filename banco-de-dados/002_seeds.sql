@@ -93,6 +93,7 @@ INSERT INTO salas (id, nome, descricao, ativo) VALUES
 -- ============================================================
 -- turmas: (id, serie_id, ano_letivo_id, nome, turno, vagas*, sala*, ativa*, criado_em*)
 -- ============================================================
+
 INSERT INTO turmas (id, serie_id, ano_letivo_id, nome, turno, vagas, sala) VALUES
 (1,  6,  2, '6A', 'manha', 35, 'Sala 101'),
 (2,  6,  2, '6B', 'tarde', 35, 'Sala 102'),
@@ -106,6 +107,7 @@ INSERT INTO turmas (id, serie_id, ano_letivo_id, nome, turno, vagas, sala) VALUE
 -- ============================================================
 -- grade_curricular: (id*, turma_id, disciplina_id, aulas_semanais*)
 -- ============================================================
+
 INSERT INTO grade_curricular (turma_id, disciplina_id, aulas_semanais) VALUES
 (1, 1, 5),(1, 2, 5),(1, 3, 3),(1, 4, 3),(1, 5, 3),(1, 6, 2),(1, 7, 2),(1, 8, 2),
 (5, 1, 3),(5, 2, 3),(5, 9, 3),(5, 10, 3),(5, 11, 3),(5, 6, 2),(5, 12, 2),(5, 13, 2),(5, 14, 2),(5, 15, 2);
@@ -115,6 +117,7 @@ INSERT INTO grade_curricular (turma_id, disciplina_id, aulas_semanais) VALUES
 --               formacao*, especializacao*, registro_mec*,
 --               telefone*, endereco*, ativo*, criado_em*)
 -- ============================================================
+
 INSERT INTO professores (id, usuario_id, cpf, formacao, especializacao) VALUES
 (1, 4, '123.456.789-01', 'Licenciatura em Matemática - USP',  'Mestrado em Educação Matemática'),
 (2, 5, '234.567.890-12', 'Licenciatura em Letras - UNICAMP',  'Especialização em Literatura Brasileira'),
@@ -124,6 +127,7 @@ INSERT INTO professores (id, usuario_id, cpf, formacao, especializacao) VALUES
 -- funcionarios: (id, usuario_id, cpf, cargo, departamento*,
 --                data_admissao*, salario*, ativo*, criado_em*)
 -- ============================================================
+ 
 INSERT INTO funcionarios (id, usuario_id, cpf, cargo, departamento, data_admissao) VALUES
 (1, 2, '456.789.012-34', 'Secretária',             'Secretaria',  '2020-03-01'),
 (2, 3, '567.890.123-45', 'Coordenador Pedagógico', 'Coordenação', '2018-01-15');
@@ -304,3 +308,24 @@ INSERT INTO mensalidades (contrato_id, competencia, valor_original, valor_final,
 (2, '2025-06-01', 1200.00, 1200.00, '2025-06-10', 'pendente', NULL),
 (3, '2025-02-01',  600.00,  600.00, '2025-02-10', 'pago',    '2025-02-15'),
 (3, '2025-03-01',  600.00,  600.00, '2025-03-10', 'pendente', NULL);
+
+
+agrisk meio apagado 
+
+Restritivos Nacional
+Endividamento Financeiro
+Consulta CPR
+Pesquisa de Imóveis - Simples
+Pesquisa Imóveis - CAR
+Patrimônio Veicular
+
+
+
+serasa meio apagado 
+Serasa Avançado
+
+
+
+
+HBI meio apagado
+SCR

@@ -15,3 +15,8 @@ INSERT IGNORE INTO salas (nome, descricao, ativo)
 SELECT DISTINCT t.sala, NULL, TRUE
 FROM turmas t
 WHERE t.sala IS NOT NULL AND t.sala <> '';
+
+
+gestao-escolar-fullstack
+CRM-FullStack
+api-email - api para envio de email, sem framework específico, pode ser usada em qualquer linguagem.
