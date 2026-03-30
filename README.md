@@ -1,114 +1,104 @@
-# Babel | Sistema de Gestao Escolar Full Stack
+# Babel — Sistema de Gestão Escolar Full Stack
 
-Projeto full stack para gestao academica e financeira escolar, com backend em Laravel e frontend em React.
-O sistema foi construido para simular um ambiente real de operacao escolar com controle de acesso por perfil, processos academicos, comunicacao interna e rotinas financeiras.
+> Plataforma acadêmica e financeira completa para instituições de ensino,
+> construída com Laravel 11 e React 18 em arquitetura SPA + API REST.
 
 ![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?logo=laravel&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-149ECA?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## Visao Geral
+---
 
-**Babel** centraliza os fluxos principais de uma instituicao de ensino em uma unica plataforma:
+## Sobre o Projeto
 
-- autenticacao e autorizacao por perfis
-- cadastro e acompanhamento de alunos, professores e turmas
-- lancamento de notas e frequencia
-- modulo financeiro com mensalidades, recebimentos e estornos
-- dashboards por tipo de usuario
+O **Babel** foi desenvolvido para simular um ambiente real de operação escolar,
+cobrindo desde o cadastro de alunos e lançamento de notas até o controle
+financeiro de mensalidades e comunicação interna entre perfis.
 
-## Para Recrutadores
+O objetivo técnico foi construir um sistema completo de produção — com
+autenticação por token, autorização granular por perfil, geração de documentos
+PDF e cobertura de testes — utilizando as melhores práticas de cada camada.
 
-Este projeto evidencia experiencia pratica em:
+---
 
-- desenvolvimento full stack (API REST + SPA)
-- arquitetura por modulos com separacao frontend/backend
-- modelagem relacional SQL para dominio escolar
-- controle de acesso por papeis com regras de autorizacao
-- qualidade de entrega com testes no backend e padroes de codigo
-
-## Stack Tecnologica
-
-### Backend
-- PHP 8.2+
-- Laravel 11
-- Laravel Sanctum (autenticacao por token)
-- DomPDF (geracao de boletim e comprovantes em PDF)
-- Pest (testes)
-
-### Frontend
-- React 18
-- Vite 5
-- React Router DOM
-- Axios
-- TanStack React Query
-- Recharts
-
-### Banco de Dados
-- MySQL 8+
-- Scripts SQL versionados em `banco-de-dados/`
-
-## Arquitetura do Projeto
-
-```text
+## Arquitetura
+```
 babel/
-|- backend/          # API Laravel (regras de negocio, autenticacao, modulos)
-|- frontend/         # SPA React (interface, rotas e consumo da API)
-|- banco-de-dados/   # schema, seeds e scripts SQL incrementais
-`- README.md
+├── backend/          # API Laravel — regras de negócio, autenticação, módulos
+├── frontend/         # SPA React — interface, rotas, consumo da API
+├── banco-de-dados/   # Schema, seeds e scripts SQL versionados
+└── README.md
 ```
 
-## Modulos Implementados
+**Fluxo de autenticação e autorização:**
 
-- **Autenticacao e perfis**: login, logout, troca de senha, atualizacao de perfil e middlewares por perfil (`admin`, `secretaria`, `coordenacao`, `professor`, `responsavel`, `aluno`).
-- **Alunos**: cadastro, edicao, detalhamento, boletim, frequencia e PDF de boletim.
-- **Professores**: cadastro, portal do professor, atribuicoes e tarefas.
-- **Turmas e matriculas**: gestao de turmas, disciplinas, horarios e matriculas individuais/em lote.
-- **Academico**: lancamento de notas, calculo de medias, frequencia e relatorios.
-- **Financeiro**: planos, geracao de mensalidades, recebimentos, estornos, inadimplencia e comprovante PDF.
-- **Comunicacao**: comunicados e mensagens entre usuarios.
-- **Gestao geral**: administracao de ano letivo, periodos, cursos, salas, disciplinas e usuarios.
+1. Frontend autentica via `POST /api/auth/login`
+2. Token Sanctum é armazenado no cliente e enviado em cada requisição
+3. API aplica middleware `perfil:admin|secretaria|coordenacao|...`
+4. Módulos de domínio persistem no MySQL e expõem recursos REST
+5. Frontend renderiza dashboards e operações conforme o perfil logado
 
-## Demonstracao Visual
+---
 
-### 1) Selecao de Portais
-![Selecao de portais](docs/screenshots/selecao-portais.png)
+## Módulos Implementados
 
-### 2) Login por Perfil (Admin)
-![Login admin](docs/screenshots/login-admin.png)
+| Módulo | Funcionalidades |
+|---|---|
+| **Autenticação** | Login, logout, troca de senha, atualização de perfil |
+| **Alunos** | Cadastro, boletim, frequência, PDF de boletim |
+| **Professores** | Portal, atribuições, tarefas |
+| **Turmas e Matrículas** | Gestão de turmas, disciplinas, horários, matrícula em lote |
+| **Acadêmico** | Lançamento de notas, cálculo de médias, relatórios |
+| **Financeiro** | Mensalidades, recebimentos, estornos, inadimplência, comprovante PDF |
+| **Comunicação** | Comunicados e mensagens entre perfis |
+| **Gestão Geral** | Ano letivo, períodos, cursos, salas, disciplinas, usuários |
 
-### 3) Dashboard Administrativo
-![Dashboard administrativo](docs/screenshots/dashboard-admin.png)
+---
 
-### 4) Mensagens Internas
-![Mensagens internas](docs/screenshots/mensagens-internas.png)
+## Perfis de Acesso
 
-### 5) Gestao de Tarefas
-![Gestao de tarefas](docs/screenshots/tarefas-professor.png)
+O sistema implementa 6 perfis com dashboards e permissões independentes:
 
-## Fluxo Tecnico (Resumo)
+`admin` `secretaria` `coordenacao` `professor` `responsavel` `aluno`
 
-1. Frontend React autentica via `/api/auth/login`.
-2. Token Sanctum e armazenado no cliente e enviado nas chamadas seguintes.
-3. API Laravel aplica autorizacao por middleware `perfil:*`.
-4. Modulos de dominio persistem dados no MySQL e expoem recursos REST.
-5. Frontend renderiza dashboards e telas de operacao conforme o perfil logado.
+Cada perfil possui rotas protegidas por middleware e visualiza apenas
+os dados e operações pertinentes à sua função.
+
+---
+
+## Stack Tecnológica
+
+### Backend
+- **PHP 8.2+** com **Laravel 11**
+- **Laravel Sanctum** — autenticação stateless por token
+- **DomPDF** — geração de boletins e comprovantes em PDF
+- **Pest** — testes automatizados
+
+### Frontend
+- **React 18** com **Vite 5**
+- **React Router DOM** — roteamento por perfil
+- **TanStack React Query** — gerenciamento de estado assíncrono
+- **Axios** com interceptors — tratamento centralizado de token e erros
+- **Recharts** — dashboards e gráficos
+
+### Banco de Dados
+- **MySQL 8+** com schema relacional orientado ao domínio escolar
+- Scripts SQL versionados em `banco-de-dados/` (schema, seeds, migrations)
+
+---
 
 ## Como Executar Localmente
 
-### 1) Banco de dados
-
+### 1. Banco de dados
 ```bash
 mysql -u root -p < banco-de-dados/001_schema.sql
 mysql -u root -p babel_escola < banco-de-dados/002_seeds.sql
 ```
 
-Opcional: aplique scripts adicionais de evolucao em `banco-de-dados/` (003+).
-
-### 2) Backend (Laravel)
-
+### 2. Backend
 ```bash
 cd backend
 composer install
@@ -116,59 +106,55 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate
 php artisan serve
+# API disponível em http://localhost:8000/api
 ```
 
-API local: `http://localhost:8000/api`
-
-### 3) Frontend (React + Vite)
-
+### 3. Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
+# App disponível em http://localhost:5173
 ```
 
-App local: `http://localhost:5173`
+> O `vite.config.js` já possui proxy de `/api` para `http://localhost:8000`.
 
-> O `vite.config.js` ja possui proxy de `/api` para `http://localhost:8000`.
+---
 
-## Credenciais de Demonstracao
+## Credenciais de Demonstração
 
-Senha padrao dos usuarios seed: `Babel@2025`
+Senha padrão: `Babel@2025`
 
-- `admin@babel.edu.br` (Administrador)
-- `secretaria@babel.edu.br` (Secretaria)
-- `coordenacao@babel.edu.br` (Coordenacao)
-- `roberto.alves@babel.edu.br` (Professor)
-- `mariajose@gmail.com` (Responsavel)
-- `lucas.santos@babel.edu.br` (Aluno)
+| Perfil | E-mail |
+|---|---|
+| Administrador | `admin@babel.edu.br` |
+| Secretaria | `secretaria@babel.edu.br` |
+| Coordenação | `coordenacao@babel.edu.br` |
+| Professor | `roberto.alves@babel.edu.br` |
+| Responsável | `mariajose@gmail.com` |
+| Aluno | `lucas.santos@babel.edu.br` |
+
+---
 
 ## Testes
-
-Backend:
-
 ```bash
 cd backend
 php artisan test
 ```
 
-## Diferenciais de Engenharia
+---
 
-- API organizada por controllers e regras de permissao de acesso
-- estrutura de banco orientada ao dominio escolar
-- frontend com separacao de paginas por modulo
-- interceptors HTTP para tratamento de token, mensagens e erros
-- suporte a geracao de documentos PDF (boletim e comprovante)
+## Diferenciais Técnicos
 
-## Estrutura de Pastas (Detalhe)
+- Arquitetura SPA + API REST com separação total de responsabilidades
+- Autorização granular com 6 perfis independentes via middleware Laravel
+- Geração de documentos PDF diretamente pelo backend
+- Interceptors HTTP centralizados no frontend para token, erros e mensagens
+- Schema relacional orientado ao domínio escolar com scripts versionados
+- Cobertura de testes no backend com Pest
 
-- `backend/app/Http/Controllers`: endpoints da API por contexto de negocio
-- `backend/app/Models`: entidades da aplicacao
-- `backend/routes/api.php`: definicao de rotas REST e middlewares
-- `frontend/src/pages`: telas organizadas por dominio
-- `frontend/src/services`: cliente HTTP e servicos de apoio
-- `banco-de-dados`: schema inicial, seeds e scripts incrementais
+---
 
-## Licenca
+## Licença
 
-Este projeto esta sob licenca MIT. Consulte `LICENSE` para detalhes.
+MIT License. Consulte `LICENSE` para detalhes.
